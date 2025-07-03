@@ -177,19 +177,23 @@ dotnet build
 Create a `.env` file in the project root:
 
 ```env
-# JIRA Configuration
+# JIRA & Confluence Configuration (same token works for both)
 JIRA_BASE_URL=https://your-domain.atlassian.net
 JIRA_USER_EMAIL=your-email@domain.com
 JIRA_API_TOKEN=your-api-token-here
 JIRA_PROJECT_KEY=YOUR_PROJECT_KEY
 ```
 
+> **Note**: The same API token works for both JIRA and Confluence since they're part of the same Atlassian Cloud instance.
+
 ### 3. Generate JIRA API Token
 
 1. Go to [Atlassian Account Settings](https://id.atlassian.com/manage-profile/security/api-tokens)
 2. Click "Create API token"
-3. Give it a descriptive name
+3. Give it a descriptive name (e.g., "JIRA & Confluence Integration")
 4. Copy the token to your `.env` file
+
+> **Important**: This token provides access to both JIRA and Confluence APIs automatically.
 
 ### 4. Run the Application
 
@@ -243,6 +247,52 @@ Available Transitions:
 2. Resolve Issue → Done
 Select transition: 1
 ✅ Ticket OPS-123 moved to "In Progress"
+```
+
+### **Confluence Integration**
+
+```
+📚 List Available Spaces
+Found 3 space(s):
+
+1. Development Documentation
+   🔑 Key: DEV
+   📝 Type: global
+   🟢 Status: current
+
+2. Project Alpha
+   🔑 Key: PROJ
+   📝 Type: global
+   🟢 Status: current
+```
+
+```
+🔍 Search Confluence Pages
+Enter search query: API documentation
+Found 2 page(s) matching 'API documentation':
+
+1. REST API Guidelines
+   📚 Space: Development Documentation (DEV)
+   📄 Excerpt: Complete guide for REST API development...
+   🔗 URL: https://yourcompany.atlassian.net/wiki/...
+
+2. API Security Standards
+   📚 Space: Project Alpha (PROJ)
+   📄 Excerpt: Security requirements for all APIs...
+```
+
+```
+📝 Create New Confluence Page
+Available spaces:
+1. Development Documentation (DEV)
+2. Project Alpha (PROJ)
+Select space (1-2): 1
+Enter page title: Release Notes v2.1
+Enter page content: <p>Release notes for version 2.1...</p>
+✅ Page created successfully!
+📄 Title: Release Notes v2.1
+🆔 ID: 98765
+🔗 View in browser: https://yourcompany.atlassian.net/wiki/...
 ```
 
 ## 🔧 Configuration Options
@@ -335,6 +385,25 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - Verify your JIRA account has necessary permissions
 - Check if your API token has the required scopes
+- For Confluence: Ensure you have at least read access to spaces you want to browse
+
+**Confluence Connection Issues**
+
+- If Confluence connection fails but JIRA works, verify your domain has Confluence enabled
+- The same API token works for both JIRA and Confluence automatically
+- Check that your Atlassian account has Confluence access permissions
+
+**Confluence Space Access**
+
+- If no spaces are listed, check your Confluence permissions
+- You need at least "View" permission to see spaces
+- Contact your Atlassian administrator if you need access to specific spaces
+
+**Confluence Page Creation Issues**
+
+- Ensure you have "Add Page" permission in the target space
+- Verify the space key is correct and exists
+- Check that parent page ID (if specified) exists and you have access
 
 **Invalid Issue Type**
 

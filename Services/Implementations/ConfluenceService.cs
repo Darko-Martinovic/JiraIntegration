@@ -40,10 +40,10 @@ public class ConfluenceService : BaseJiraHttpService, IConfluenceService
         try
         {
             _logger.LogInformation("Testing Confluence connection");
-            
+
             var confluenceBaseUrl = GetConfluenceBaseUrl();
             var response = await _httpClient.GetAsync($"{confluenceBaseUrl}/rest/api/space?limit=1");
-            
+
             if (response.IsSuccessStatusCode)
             {
                 _logger.LogInformation("Confluence connection test successful");
@@ -68,10 +68,10 @@ public class ConfluenceService : BaseJiraHttpService, IConfluenceService
         try
         {
             _logger.LogInformation("Fetching Confluence spaces");
-            
+
             var confluenceBaseUrl = GetConfluenceBaseUrl();
             var spaceResponse = await GetAsync<ConfluenceSpaceListResponse>($"{confluenceBaseUrl}/rest/api/space?limit=50&expand=description.plain,homepage");
-            
+
             if (spaceResponse != null)
             {
                 _logger.LogInformation("Retrieved {Count} Confluence spaces", spaceResponse.Results.Count);
@@ -96,20 +96,20 @@ public class ConfluenceService : BaseJiraHttpService, IConfluenceService
         try
         {
             _logger.LogInformation("Searching Confluence pages with query: {Query}", query);
-            
+
             var confluenceBaseUrl = GetConfluenceBaseUrl();
             var searchQuery = Uri.EscapeDataString(query);
             var url = $"{confluenceBaseUrl}/rest/api/content/search?cql=text~\"{searchQuery}\"";
-            
+
             if (!string.IsNullOrEmpty(spaceKey))
             {
                 url += $"+and+space=\"{Uri.EscapeDataString(spaceKey)}\"";
             }
-            
+
             url += $"&limit={limit}&expand=space,body.view,version";
-            
+
             var searchResponse = await GetAsync<ConfluenceSearchResults>(url);
-            
+
             if (searchResponse != null)
             {
                 _logger.LogInformation("Found {Count} pages matching query", searchResponse.Results.Count);
@@ -134,10 +134,10 @@ public class ConfluenceService : BaseJiraHttpService, IConfluenceService
         try
         {
             _logger.LogInformation("Fetching Confluence page: {PageId}", pageId);
-            
+
             var confluenceBaseUrl = GetConfluenceBaseUrl();
             var page = await GetAsync<ConfluencePage>($"{confluenceBaseUrl}/rest/api/content/{pageId}?expand=space,body.storage,body.view,version,metadata");
-            
+
             if (page != null)
             {
                 _logger.LogInformation("Retrieved page: {Title}", page.Title);
@@ -162,7 +162,7 @@ public class ConfluenceService : BaseJiraHttpService, IConfluenceService
         try
         {
             _logger.LogInformation("Creating new page in space {SpaceKey}: {Title}", spaceKey, title);
-            
+
             var createRequest = new
             {
                 type = "page",
@@ -174,7 +174,7 @@ public class ConfluenceService : BaseJiraHttpService, IConfluenceService
 
             var confluenceBaseUrl = GetConfluenceBaseUrl();
             var page = await PostAsync<ConfluencePage>($"{confluenceBaseUrl}/rest/api/content", createRequest);
-            
+
             if (page != null)
             {
                 _logger.LogInformation("Created page: {Title} with ID: {PageId}", title, page.Id);
@@ -199,17 +199,17 @@ public class ConfluenceService : BaseJiraHttpService, IConfluenceService
         try
         {
             _logger.LogInformation("Fetching pages in space: {SpaceKey}", spaceKey);
-            
+
             var confluenceBaseUrl = GetConfluenceBaseUrl();
             var searchResults = await GetAsync<ConfluenceSearchResults>($"{confluenceBaseUrl}/rest/api/content?spaceKey={spaceKey}&limit={limit}&expand=space,version");
-            
+
             if (searchResults?.Results != null)
             {
                 var pages = searchResults.Results
                     .Where(r => r.Content != null)
                     .Select(r => r.Content!)
                     .ToList();
-                
+
                 _logger.LogInformation("Retrieved {Count} pages from space {SpaceKey}", pages.Count, spaceKey);
                 return pages;
             }

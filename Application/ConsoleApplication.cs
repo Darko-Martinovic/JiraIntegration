@@ -1828,9 +1828,9 @@ public class ConsoleApplication
     private async Task TestConfluenceConnectionAsync()
     {
         Console.WriteLine("\n=== CONFLUENCE CONNECTION TEST ===");
-        
+
         var isConnected = await _confluenceService.TestConnectionAsync();
-        
+
         if (isConnected)
         {
             Console.WriteLine("✅ Confluence connection successful!");
@@ -1850,9 +1850,9 @@ public class ConsoleApplication
     private async Task ListConfluenceSpacesAsync()
     {
         Console.WriteLine("\n=== AVAILABLE CONFLUENCE SPACES ===");
-        
+
         var spaces = await _confluenceService.GetSpacesAsync();
-        
+
         if (spaces.Count == 0)
         {
             Console.WriteLine("❌ No spaces found or unable to fetch spaces.");
@@ -1860,7 +1860,7 @@ public class ConsoleApplication
         }
 
         Console.WriteLine($"📚 Found {spaces.Count} space(s):\n");
-        
+
         for (int i = 0; i < spaces.Count; i++)
         {
             var space = spaces[i];
@@ -1868,11 +1868,11 @@ public class ConsoleApplication
             Console.WriteLine($"   🔑 Key: {space.Key}");
             Console.WriteLine($"   📝 Type: {space.Type}");
             Console.WriteLine($"   🟢 Status: {space.Status}");
-            
+
             if (space.Description?.Plain != null && !string.IsNullOrEmpty(space.Description.Plain))
             {
-                var description = space.Description.Plain.Length > 100 
-                    ? space.Description.Plain.Substring(0, 100) + "..." 
+                var description = space.Description.Plain.Length > 100
+                    ? space.Description.Plain.Substring(0, 100) + "..."
                     : space.Description.Plain;
                 Console.WriteLine($"   📄 Description: {description}");
             }
@@ -1888,10 +1888,10 @@ public class ConsoleApplication
     private async Task SearchConfluencePagesAsync()
     {
         Console.WriteLine("\n=== SEARCH CONFLUENCE PAGES ===");
-        
+
         Console.Write("Enter search query: ");
         var query = Console.ReadLine()?.Trim();
-        
+
         if (string.IsNullOrEmpty(query))
         {
             Console.WriteLine("❌ Search query cannot be empty.");
@@ -1909,7 +1909,7 @@ public class ConsoleApplication
             limit = parsedLimit;
 
         var searchResults = await _confluenceService.SearchPagesAsync(query, spaceKey, limit);
-        
+
         if (searchResults.Results.Count == 0)
         {
             Console.WriteLine($"❌ No pages found matching '{query}'.");
@@ -1917,23 +1917,23 @@ public class ConsoleApplication
         }
 
         Console.WriteLine($"\n🔍 Found {searchResults.Results.Count} page(s) matching '{query}':\n");
-        
+
         for (int i = 0; i < searchResults.Results.Count; i++)
         {
             var result = searchResults.Results[i];
             Console.WriteLine($"{i + 1}. {result.Title}");
-            
+
             if (result.Content?.Space != null)
                 Console.WriteLine($"   📚 Space: {result.Content.Space.Name} ({result.Content.Space.Key})");
-                
+
             if (!string.IsNullOrEmpty(result.Excerpt))
             {
-                var excerpt = result.Excerpt.Length > 150 
-                    ? result.Excerpt.Substring(0, 150) + "..." 
+                var excerpt = result.Excerpt.Length > 150
+                    ? result.Excerpt.Substring(0, 150) + "..."
                     : result.Excerpt;
                 Console.WriteLine($"   📄 Excerpt: {excerpt}");
             }
-            
+
             if (!string.IsNullOrEmpty(result.Url))
                 Console.WriteLine($"   🔗 URL: {result.Url}");
 
@@ -1948,10 +1948,10 @@ public class ConsoleApplication
     private async Task ViewConfluencePageAsync()
     {
         Console.WriteLine("\n=== VIEW CONFLUENCE PAGE ===");
-        
+
         Console.Write("Enter page ID: ");
         var pageId = Console.ReadLine()?.Trim();
-        
+
         if (string.IsNullOrEmpty(pageId))
         {
             Console.WriteLine("❌ Page ID cannot be empty.");
@@ -1959,7 +1959,7 @@ public class ConsoleApplication
         }
 
         var page = await _confluenceService.GetPageAsync(pageId);
-        
+
         if (page == null)
         {
             Console.WriteLine($"❌ Page with ID '{pageId}' not found.");
@@ -1971,10 +1971,10 @@ public class ConsoleApplication
         Console.WriteLine($"ID: {page.Id}");
         Console.WriteLine($"Type: {page.Type}");
         Console.WriteLine($"Status: {page.Status}");
-        
+
         if (page.Space != null)
             Console.WriteLine($"Space: {page.Space.Name} ({page.Space.Key})");
-            
+
         if (page.Version != null)
         {
             Console.WriteLine($"Version: {page.Version.Number}");
@@ -1988,10 +1988,10 @@ public class ConsoleApplication
             var content = page.Body.View.Value;
             // Remove HTML tags for console display
             var plainContent = System.Text.RegularExpressions.Regex.Replace(content, "<.*?>", string.Empty);
-            
+
             if (plainContent.Length > 500)
                 plainContent = plainContent.Substring(0, 500) + "\n... (truncated)";
-                
+
             Console.WriteLine($"\nContent Preview:\n{plainContent}");
         }
 
@@ -2008,7 +2008,7 @@ public class ConsoleApplication
     private async Task CreateConfluencePageAsync()
     {
         Console.WriteLine("\n=== CREATE NEW CONFLUENCE PAGE ===");
-        
+
         // First, let user select a space
         var spaces = await _confluenceService.GetSpacesAsync();
         if (spaces.Count == 0)
@@ -2022,10 +2022,10 @@ public class ConsoleApplication
         {
             Console.WriteLine($"{i + 1}. {spaces[i].Name} ({spaces[i].Key})");
         }
-        
+
         Console.Write($"Select space (1-{spaces.Count}): ");
         var spaceChoice = Console.ReadLine()?.Trim();
-        
+
         if (!int.TryParse(spaceChoice, out var spaceIndex) || spaceIndex < 1 || spaceIndex > spaces.Count)
         {
             Console.WriteLine("❌ Invalid space selection.");
@@ -2033,10 +2033,10 @@ public class ConsoleApplication
         }
 
         var selectedSpace = spaces[spaceIndex - 1];
-        
+
         Console.Write("Enter page title: ");
         var title = Console.ReadLine()?.Trim();
-        
+
         if (string.IsNullOrEmpty(title))
         {
             Console.WriteLine("❌ Page title cannot be empty.");
@@ -2045,7 +2045,7 @@ public class ConsoleApplication
 
         Console.Write("Enter page content (HTML format): ");
         var content = Console.ReadLine()?.Trim();
-        
+
         if (string.IsNullOrEmpty(content))
         {
             content = "<p>This page was created via the JIRA Integration Console Application.</p>";
@@ -2056,14 +2056,14 @@ public class ConsoleApplication
         if (string.IsNullOrEmpty(parentId)) parentId = null;
 
         var createdPage = await _confluenceService.CreatePageAsync(selectedSpace.Key, title, content, parentId);
-        
+
         if (createdPage != null)
         {
             Console.WriteLine($"✅ Page created successfully!");
             Console.WriteLine($"📄 Title: {createdPage.Title}");
             Console.WriteLine($"🆔 ID: {createdPage.Id}");
             Console.WriteLine($"📚 Space: {selectedSpace.Name} ({selectedSpace.Key})");
-            
+
             if (createdPage.Links?.Webui != null)
             {
                 var baseUrl = Environment.GetEnvironmentVariable("JIRA_BASE_URL")?.TrimEnd('/');
@@ -2082,7 +2082,7 @@ public class ConsoleApplication
     private async Task ListPagesInSpaceAsync()
     {
         Console.WriteLine("\n=== LIST PAGES IN SPACE ===");
-        
+
         // First, let user select a space
         var spaces = await _confluenceService.GetSpacesAsync();
         if (spaces.Count == 0)
@@ -2096,10 +2096,10 @@ public class ConsoleApplication
         {
             Console.WriteLine($"{i + 1}. {spaces[i].Name} ({spaces[i].Key})");
         }
-        
+
         Console.Write($"Select space (1-{spaces.Count}): ");
         var spaceChoice = Console.ReadLine()?.Trim();
-        
+
         if (!int.TryParse(spaceChoice, out var spaceIndex) || spaceIndex < 1 || spaceIndex > spaces.Count)
         {
             Console.WriteLine("❌ Invalid space selection.");
@@ -2107,7 +2107,7 @@ public class ConsoleApplication
         }
 
         var selectedSpace = spaces[spaceIndex - 1];
-        
+
         Console.Write("Maximum results [25]: ");
         var limitInput = Console.ReadLine()?.Trim();
         var limit = 25;
@@ -2115,7 +2115,7 @@ public class ConsoleApplication
             limit = parsedLimit;
 
         var pages = await _confluenceService.GetPagesInSpaceAsync(selectedSpace.Key, limit);
-        
+
         if (pages.Count == 0)
         {
             Console.WriteLine($"❌ No pages found in space '{selectedSpace.Name}'.");
@@ -2123,7 +2123,7 @@ public class ConsoleApplication
         }
 
         Console.WriteLine($"\n📚 Found {pages.Count} page(s) in '{selectedSpace.Name}':\n");
-        
+
         for (int i = 0; i < pages.Count; i++)
         {
             var page = pages[i];
@@ -2131,7 +2131,7 @@ public class ConsoleApplication
             Console.WriteLine($"   🆔 ID: {page.Id}");
             Console.WriteLine($"   📝 Type: {page.Type}");
             Console.WriteLine($"   🟢 Status: {page.Status}");
-            
+
             if (page.Version != null)
             {
                 Console.WriteLine($"   📅 Last Modified: {page.Version.When:yyyy-MM-dd HH:mm:ss}");
