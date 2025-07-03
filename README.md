@@ -11,7 +11,7 @@ This application integrates with Atlassian Cloud APIs:
   - Used for issue management, workflows, user management, and project operations
 - **Confluence REST API**: `https://domain.atlassian.net/wiki/rest/api/`
   - [Official Documentation](https://developer.atlassian.com/cloud/confluence/rest/v1/intro/)
-  - _Coming Soon_ - Future integration for documentation and knowledge base management
+  - ✅ **Now Available** - Full integration for documentation and knowledge base management
 
 > **Note**: Replace `domain` with your actual Atlassian domain (e.g., `yourcompany.atlassian.net`)
 
@@ -97,6 +97,16 @@ This application integrates with Atlassian Cloud APIs:
 - **Assignment Helper**: Provides account IDs needed for ticket assignment operations
 - **Validation**: Helps ensure correct account IDs are used when updating assignees
 
+### ✅ 12. Confluence Integration
+
+- **Connection Test**: Validates Confluence API access using the same JIRA credentials
+- **List Spaces**: Browse all Confluence spaces you have access to with descriptions
+- **Search Pages**: Full-text search across all pages or within specific spaces
+- **View Page Content**: Display page details, metadata, and content preview
+- **Create Pages**: Create new pages in any space with optional parent page linking
+- **Browse Space Content**: List all pages within a specific Confluence space
+- **Seamless Integration**: Uses the same API token as JIRA for unified authentication
+
 ## 🛠️ Technical Architecture
 
 ### **High-Quality Code Standards**
@@ -121,7 +131,8 @@ JiraIntegration/
 ├── Models/
 │   ├── JiraSettings.cs                # Configuration model
 │   ├── Dto/
-│   │   └── JiraModels.cs              # JIRA API response models
+│   │   ├── JiraModels.cs              # JIRA API response models
+│   │   └── ConfluenceModels.cs        # Confluence API response models
 │   └── Requests/
 │       └── JiraRequests.cs            # JIRA API request models
 ├── Services/
@@ -131,12 +142,14 @@ JiraIntegration/
 │   │   ├── IJiraAuthService.cs
 │   │   ├── IJiraTicketService.cs
 │   │   ├── IJiraSearchService.cs
-│   │   └── IJiraProjectService.cs
+│   │   ├── IJiraProjectService.cs
+│   │   └── IConfluenceService.cs      # Confluence service interface
 │   └── Implementations/
 │       ├── JiraAuthService.cs
 │       ├── JiraTicketService.cs
 │       ├── JiraSearchService.cs
-│       └── JiraProjectService.cs
+│       ├── JiraProjectService.cs
+│       └── ConfluenceService.cs       # Confluence API operations
 ├── Program.cs                         # Entry point and DI setup
 ├── appsettings.json                   # Application configuration
 └── .env                              # Environment variables (credentials)
