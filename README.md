@@ -1,6 +1,19 @@
 # JIRA Integration Console Application
 
-A comprehensive .NET console application for interacting with JIRA Cloud via REST API. This application provides **11 powerful features** for managing JIRA tickets, workflows, and team productivity.
+A comprehensive .NET console application for interacting with JIRA Cloud and Confluence via REST API. This application provides **12 powerful features** for managing JIRA tickets, workflows, team productivity, and Confluence documentation.
+
+## 🔗 **API Information**
+
+This application integrates with Atlassian Cloud APIs:
+
+- **JIRA REST API v3**: `https://domain.atlassian.net/rest/api/3/`
+  - [Official Documentation](https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/)
+  - Used for issue management, workflows, user management, and project operations
+- **Confluence REST API**: `https://domain.atlassian.net/wiki/rest/api/`
+  - [Official Documentation](https://developer.atlassian.com/cloud/confluence/rest/v1/intro/)
+  - _Coming Soon_ - Future integration for documentation and knowledge base management
+
+> **Note**: Replace `domain` with your actual Atlassian domain (e.g., `yourcompany.atlassian.net`)
 
 ## 🚀 Features
 

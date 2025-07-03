@@ -36,18 +36,27 @@ public class JiraCommentService : BaseJiraHttpService, IJiraCommentService
             }
 
             var payload = request.ToJiraFormat();
-            var result = await PostAsync<JiraComment>($"/rest/api/3/issue/{ticketKey}/comment", payload);
 
-            if (result != null)
+            // Use PostAsyncNoResponse since we don't need the complex response structure for adding comments
+            var success = await PostAsyncNoResponse($"/rest/api/3/issue/{ticketKey}/comment", payload);
+
+            if (success)
             {
                 _logger.LogInformation("Successfully added comment to ticket: {TicketKey}", ticketKey);
+                // Return a basic comment object to indicate success
+                return new JiraComment
+                {
+                    Id = "created",
+                    Body = request.Body,
+                    Created = DateTime.UtcNow,
+                    Updated = DateTime.UtcNow
+                };
             }
             else
             {
                 _logger.LogWarning("Failed to add comment to ticket: {TicketKey}", ticketKey);
+                return null;
             }
-
-            return result;
         }
         catch (Exception ex)
         {

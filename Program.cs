@@ -126,6 +126,11 @@ class Program
             client.Timeout = TimeSpan.FromSeconds(30);
         });
 
+        services.AddHttpClient<IConfluenceService, ConfluenceService>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+
         // Configure Jira settings from configuration and environment variables
         services.Configure<JiraSettings>(options =>
         {
@@ -158,6 +163,7 @@ class Program
         services.AddTransient<IJiraAdvancedSearchService, JiraAdvancedSearchService>();
         services.AddTransient<IJiraReportingService, JiraReportingService>();
         services.AddTransient<IJiraUserService, JiraUserService>();
+        services.AddTransient<IConfluenceService, ConfluenceService>();
 
         // Register main application
         services.AddTransient<ConsoleApplication>();

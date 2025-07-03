@@ -19,6 +19,7 @@ public class ConsoleApplication
     private readonly IJiraAdvancedSearchService _advancedSearchService;
     private readonly IJiraReportingService _reportingService;
     private readonly IJiraUserService _userService;
+    private readonly IConfluenceService _confluenceService;
     private readonly ILogger<ConsoleApplication> _logger;
 
     public ConsoleApplication(
@@ -31,6 +32,7 @@ public class ConsoleApplication
         IJiraAdvancedSearchService advancedSearchService,
         IJiraReportingService reportingService,
         IJiraUserService userService,
+        IConfluenceService confluenceService,
         ILogger<ConsoleApplication> logger)
     {
         _authService = authService;
@@ -42,6 +44,7 @@ public class ConsoleApplication
         _advancedSearchService = advancedSearchService;
         _reportingService = reportingService;
         _userService = userService;
+        _confluenceService = confluenceService;
         _logger = logger;
     }
 
@@ -176,11 +179,14 @@ public class ConsoleApplication
                     case "11":
                         await UserManagementAsync();
                         break;
+                    case "12":
+                        await ConfluenceIntegrationAsync();
+                        break;
                     case "0":
                         Console.WriteLine("👋 Thank you for using Jira Integration Console!");
                         return;
                     default:
-                        Console.WriteLine("❌ Invalid option. Please select a number from 0-11.");
+                        Console.WriteLine("❌ Invalid option. Please select a number from 0-12.");
                         break;
                 }
             }
@@ -216,6 +222,7 @@ public class ConsoleApplication
         Console.WriteLine("9. 🔎 Advanced Search");
         Console.WriteLine("10. 📊 Reporting Features");
         Console.WriteLine("11. 👥 User Management");
+        Console.WriteLine("12. 📚 Confluence Integration");
         Console.WriteLine("0. ❌ Exit");
         Console.Write("\nChoose an option: ");
     }
@@ -702,36 +709,49 @@ public class ConsoleApplication
     /// </summary>
     private async Task AddCommentsAsync()
     {
-        Console.WriteLine("\n=== ADD COMMENTS ===");
-
-        try
+        while (true)
         {
+            Console.WriteLine("\n=== ADD COMMENTS ===");
             Console.WriteLine("1. Add comment to specific ticket");
             Console.WriteLine("2. Use comment template");
             Console.WriteLine("3. View existing comments");
-            Console.Write("Choose an option (1-3): ");
+            Console.WriteLine("0. ⬅️ Back to Main Menu");
+            Console.Write("\nChoose an option: ");
 
             var choice = Console.ReadLine()?.Trim();
 
-            switch (choice)
+            try
             {
-                case "1":
-                    await AddCommentToTicketAsync();
-                    break;
-                case "2":
-                    await UseCommentTemplateAsync();
-                    break;
-                case "3":
-                    await ViewCommentsAsync();
-                    break;
-                default:
-                    Console.WriteLine("❌ Invalid option selected.");
-                    break;
+                switch (choice)
+                {
+                    case "1":
+                        await AddCommentToTicketAsync();
+                        break;
+                    case "2":
+                        await UseCommentTemplateAsync();
+                        break;
+                    case "3":
+                        await ViewCommentsAsync();
+                        break;
+                    case "0":
+                        return;
+                    default:
+                        Console.WriteLine("❌ Invalid option. Please select a number from 0-3.");
+                        break;
+                }
             }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"❌ Error in comment operations: {ex.Message}");
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in comment operations");
+                Console.WriteLine($"❌ Error: {ex.Message}");
+            }
+
+            if (choice != "0")
+            {
+                Console.WriteLine("\nPress any key to continue...");
+                Console.ReadKey();
+                Console.Clear();
+            }
         }
     }
 
@@ -866,36 +886,49 @@ public class ConsoleApplication
     /// </summary>
     private async Task BulkOperationsAsync()
     {
-        Console.WriteLine("\n=== BULK OPERATIONS ===");
-
-        try
+        while (true)
         {
+            Console.WriteLine("\n=== BULK OPERATIONS ===");
             Console.WriteLine("1. Bulk Update Fields");
             Console.WriteLine("2. Bulk Transition Tickets");
             Console.WriteLine("3. Export/Import (CSV)");
-            Console.Write("Choose an option (1-3): ");
+            Console.WriteLine("0. ⬅️ Back to Main Menu");
+            Console.Write("\nChoose an option: ");
 
             var choice = Console.ReadLine()?.Trim();
 
-            switch (choice)
+            try
             {
-                case "1":
-                    await BulkUpdateFieldsAsync();
-                    break;
-                case "2":
-                    await BulkTransitionTicketsAsync();
-                    break;
-                case "3":
-                    await CsvOperationsAsync();
-                    break;
-                default:
-                    Console.WriteLine("❌ Invalid option selected.");
-                    break;
+                switch (choice)
+                {
+                    case "1":
+                        await BulkUpdateFieldsAsync();
+                        break;
+                    case "2":
+                        await BulkTransitionTicketsAsync();
+                        break;
+                    case "3":
+                        await CsvOperationsAsync();
+                        break;
+                    case "0":
+                        return;
+                    default:
+                        Console.WriteLine("❌ Invalid option. Please select a number from 0-3.");
+                        break;
+                }
             }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"❌ Error in bulk operations: {ex.Message}");
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in bulk operations");
+                Console.WriteLine($"❌ Error: {ex.Message}");
+            }
+
+            if (choice != "0")
+            {
+                Console.WriteLine("\nPress any key to continue...");
+                Console.ReadKey();
+                Console.Clear();
+            }
         }
     }
 
@@ -982,40 +1015,53 @@ public class ConsoleApplication
     /// </summary>
     private async Task AdvancedSearchAsync()
     {
-        Console.WriteLine("\n=== ADVANCED SEARCH ===");
-
-        try
+        while (true)
         {
+            Console.WriteLine("\n=== ADVANCED SEARCH ===");
             Console.WriteLine("1. Visual JQL Builder");
             Console.WriteLine("2. Saved Searches");
             Console.WriteLine("3. Smart Filters");
             Console.WriteLine("4. Custom JQL Search");
-            Console.Write("Choose an option (1-4): ");
+            Console.WriteLine("0. ⬅️ Back to Main Menu");
+            Console.Write("\nChoose an option: ");
 
             var choice = Console.ReadLine()?.Trim();
 
-            switch (choice)
+            try
             {
-                case "1":
-                    await VisualJqlBuilderAsync();
-                    break;
-                case "2":
-                    await SavedSearchesAsync();
-                    break;
-                case "3":
-                    await SmartFiltersAsync();
-                    break;
-                case "4":
-                    await CustomJqlSearchAsync();
-                    break;
-                default:
-                    Console.WriteLine("❌ Invalid option selected.");
-                    break;
+                switch (choice)
+                {
+                    case "1":
+                        await VisualJqlBuilderAsync();
+                        break;
+                    case "2":
+                        await SavedSearchesAsync();
+                        break;
+                    case "3":
+                        await SmartFiltersAsync();
+                        break;
+                    case "4":
+                        await CustomJqlSearchAsync();
+                        break;
+                    case "0":
+                        return;
+                    default:
+                        Console.WriteLine("❌ Invalid option. Please select a number from 0-4.");
+                        break;
+                }
             }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"❌ Error in advanced search: {ex.Message}");
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in advanced search");
+                Console.WriteLine($"❌ Error: {ex.Message}");
+            }
+
+            if (choice != "0")
+            {
+                Console.WriteLine("\nPress any key to continue...");
+                Console.ReadKey();
+                Console.Clear();
+            }
         }
     }
 
@@ -1076,29 +1122,49 @@ public class ConsoleApplication
 
     private async Task SavedSearchesAsync()
     {
-        Console.WriteLine("\n=== SAVED SEARCHES ===");
-
-        Console.WriteLine("1. View Saved Searches");
-        Console.WriteLine("2. Save Current Search");
-        Console.WriteLine("3. Execute Saved Search");
-        Console.Write("Choose an option (1-3): ");
-
-        var choice = Console.ReadLine()?.Trim();
-
-        switch (choice)
+        while (true)
         {
-            case "1":
-                await ViewSavedSearchesAsync();
-                break;
-            case "2":
-                await SaveCurrentSearchAsync();
-                break;
-            case "3":
-                await ExecuteSavedSearchAsync();
-                break;
-            default:
-                Console.WriteLine("❌ Invalid option selected.");
-                break;
+            Console.WriteLine("\n=== SAVED SEARCHES ===");
+            Console.WriteLine("1. View Saved Searches");
+            Console.WriteLine("2. Save Current Search");
+            Console.WriteLine("3. Execute Saved Search");
+            Console.WriteLine("0. ⬅️ Back to Advanced Search");
+            Console.Write("\nChoose an option: ");
+
+            var choice = Console.ReadLine()?.Trim();
+
+            try
+            {
+                switch (choice)
+                {
+                    case "1":
+                        await ViewSavedSearchesAsync();
+                        break;
+                    case "2":
+                        await SaveCurrentSearchAsync();
+                        break;
+                    case "3":
+                        await ExecuteSavedSearchAsync();
+                        break;
+                    case "0":
+                        return;
+                    default:
+                        Console.WriteLine("❌ Invalid option. Please select a number from 0-3.");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in saved searches");
+                Console.WriteLine($"❌ Error: {ex.Message}");
+            }
+
+            if (choice != "0")
+            {
+                Console.WriteLine("\nPress any key to continue...");
+                Console.ReadKey();
+                Console.Clear();
+            }
         }
     }
 
@@ -1260,49 +1326,63 @@ public class ConsoleApplication
     /// </summary>
     private async Task ReportingFeaturesAsync()
     {
-        Console.WriteLine("\n=== REPORTING FEATURES ===");
-
-        try
+        while (true)
         {
-            var reportTypes = _reportingService.GetAvailableReportTypes();
+            Console.WriteLine("\n=== REPORTING FEATURES ===");
 
-            Console.WriteLine("Available Reports:");
-            for (int i = 0; i < reportTypes.Count; i++)
+            try
             {
-                Console.WriteLine($"{i + 1}. {reportTypes[i].Name}");
-                Console.WriteLine($"   {reportTypes[i].Description}");
+                var reportTypes = _reportingService.GetAvailableReportTypes();
+
+                Console.WriteLine("Available Reports:");
+                for (int i = 0; i < reportTypes.Count; i++)
+                {
+                    Console.WriteLine($"{i + 1}. {reportTypes[i].Name}");
+                    Console.WriteLine($"   {reportTypes[i].Description}");
+                }
+
+                Console.WriteLine("0. ⬅️ Back to Main Menu");
+                Console.Write($"\nSelect report type (0-{reportTypes.Count}): ");
+                var input = Console.ReadLine()?.Trim();
+
+                if (input == "0")
+                {
+                    return;
+                }
+
+                if (!int.TryParse(input, out var index) || index < 1 || index > reportTypes.Count)
+                {
+                    Console.WriteLine("❌ Invalid report selection.");
+                    continue;
+                }
+
+                var selectedReport = reportTypes[index - 1];
+
+                switch (selectedReport.Id)
+                {
+                    case "sprint":
+                        await GenerateSprintReportAsync();
+                        break;
+                    case "team":
+                        await GenerateTeamDashboardAsync();
+                        break;
+                    case "executive":
+                        await GenerateExecutiveSummaryAsync();
+                        break;
+                    default:
+                        Console.WriteLine("ℹ️ This report type is not yet implemented.");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in reporting features");
+                Console.WriteLine($"❌ Error: {ex.Message}");
             }
 
-            Console.Write($"\nSelect report type (1-{reportTypes.Count}): ");
-            var input = Console.ReadLine()?.Trim();
-
-            if (!int.TryParse(input, out var index) || index < 1 || index > reportTypes.Count)
-            {
-                Console.WriteLine("❌ Invalid report selection.");
-                return;
-            }
-
-            var selectedReport = reportTypes[index - 1];
-
-            switch (selectedReport.Id)
-            {
-                case "sprint":
-                    await GenerateSprintReportAsync();
-                    break;
-                case "team":
-                    await GenerateTeamDashboardAsync();
-                    break;
-                case "executive":
-                    await GenerateExecutiveSummaryAsync();
-                    break;
-                default:
-                    Console.WriteLine("ℹ️ This report type is not yet implemented.");
-                    break;
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"❌ Error in reporting features: {ex.Message}");
+            Console.WriteLine("\nPress any key to continue...");
+            Console.ReadKey();
+            Console.Clear();
         }
     }
 
@@ -1677,5 +1757,390 @@ public class ConsoleApplication
         }
 
         Console.WriteLine("\n💡 Tip: Copy the Account ID to use when assigning tickets!");
+    }
+
+    /// <summary>
+    /// Confluence integration menu
+    /// </summary>
+    private async Task ConfluenceIntegrationAsync()
+    {
+        while (true)
+        {
+            Console.WriteLine("\n=== CONFLUENCE INTEGRATION ===");
+            Console.WriteLine("1. 🔐 Test Confluence Connection");
+            Console.WriteLine("2. 📚 List Available Spaces");
+            Console.WriteLine("3. 🔍 Search Pages");
+            Console.WriteLine("4. 👀 View Page Content");
+            Console.WriteLine("5. 📝 Create New Page");
+            Console.WriteLine("6. 📄 List Pages in Space");
+            Console.WriteLine("0. ⬅️ Back to Main Menu");
+            Console.Write("\nChoose an option: ");
+
+            var choice = Console.ReadLine()?.Trim();
+
+            try
+            {
+                switch (choice)
+                {
+                    case "1":
+                        await TestConfluenceConnectionAsync();
+                        break;
+                    case "2":
+                        await ListConfluenceSpacesAsync();
+                        break;
+                    case "3":
+                        await SearchConfluencePagesAsync();
+                        break;
+                    case "4":
+                        await ViewConfluencePageAsync();
+                        break;
+                    case "5":
+                        await CreateConfluencePageAsync();
+                        break;
+                    case "6":
+                        await ListPagesInSpaceAsync();
+                        break;
+                    case "0":
+                        return;
+                    default:
+                        Console.WriteLine("❌ Invalid option. Please select a number from 0-6.");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in Confluence integration menu");
+                Console.WriteLine($"❌ Error: {ex.Message}");
+            }
+
+            if (choice != "0")
+            {
+                Console.WriteLine("\nPress any key to continue...");
+                Console.ReadKey();
+                Console.Clear();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Tests Confluence connection
+    /// </summary>
+    private async Task TestConfluenceConnectionAsync()
+    {
+        Console.WriteLine("\n=== CONFLUENCE CONNECTION TEST ===");
+        
+        var isConnected = await _confluenceService.TestConnectionAsync();
+        
+        if (isConnected)
+        {
+            Console.WriteLine("✅ Confluence connection successful!");
+            Console.WriteLine("🔗 You can access all Confluence features.");
+        }
+        else
+        {
+            Console.WriteLine("❌ Confluence connection failed.");
+            Console.WriteLine("Please check your credentials and network connection.");
+            Console.WriteLine("Note: The same JIRA API token should work for Confluence.");
+        }
+    }
+
+    /// <summary>
+    /// Lists all available Confluence spaces
+    /// </summary>
+    private async Task ListConfluenceSpacesAsync()
+    {
+        Console.WriteLine("\n=== AVAILABLE CONFLUENCE SPACES ===");
+        
+        var spaces = await _confluenceService.GetSpacesAsync();
+        
+        if (spaces.Count == 0)
+        {
+            Console.WriteLine("❌ No spaces found or unable to fetch spaces.");
+            return;
+        }
+
+        Console.WriteLine($"📚 Found {spaces.Count} space(s):\n");
+        
+        for (int i = 0; i < spaces.Count; i++)
+        {
+            var space = spaces[i];
+            Console.WriteLine($"{i + 1}. {space.Name}");
+            Console.WriteLine($"   🔑 Key: {space.Key}");
+            Console.WriteLine($"   📝 Type: {space.Type}");
+            Console.WriteLine($"   🟢 Status: {space.Status}");
+            
+            if (space.Description?.Plain != null && !string.IsNullOrEmpty(space.Description.Plain))
+            {
+                var description = space.Description.Plain.Length > 100 
+                    ? space.Description.Plain.Substring(0, 100) + "..." 
+                    : space.Description.Plain;
+                Console.WriteLine($"   📄 Description: {description}");
+            }
+
+            if (i < spaces.Count - 1)
+                Console.WriteLine();
+        }
+    }
+
+    /// <summary>
+    /// Searches for pages in Confluence
+    /// </summary>
+    private async Task SearchConfluencePagesAsync()
+    {
+        Console.WriteLine("\n=== SEARCH CONFLUENCE PAGES ===");
+        
+        Console.Write("Enter search query: ");
+        var query = Console.ReadLine()?.Trim();
+        
+        if (string.IsNullOrEmpty(query))
+        {
+            Console.WriteLine("❌ Search query cannot be empty.");
+            return;
+        }
+
+        Console.Write("Enter space key (optional, press Enter to skip): ");
+        var spaceKey = Console.ReadLine()?.Trim();
+        if (string.IsNullOrEmpty(spaceKey)) spaceKey = null;
+
+        Console.Write("Maximum results [25]: ");
+        var limitInput = Console.ReadLine()?.Trim();
+        var limit = 25;
+        if (!string.IsNullOrEmpty(limitInput) && int.TryParse(limitInput, out var parsedLimit))
+            limit = parsedLimit;
+
+        var searchResults = await _confluenceService.SearchPagesAsync(query, spaceKey, limit);
+        
+        if (searchResults.Results.Count == 0)
+        {
+            Console.WriteLine($"❌ No pages found matching '{query}'.");
+            return;
+        }
+
+        Console.WriteLine($"\n🔍 Found {searchResults.Results.Count} page(s) matching '{query}':\n");
+        
+        for (int i = 0; i < searchResults.Results.Count; i++)
+        {
+            var result = searchResults.Results[i];
+            Console.WriteLine($"{i + 1}. {result.Title}");
+            
+            if (result.Content?.Space != null)
+                Console.WriteLine($"   📚 Space: {result.Content.Space.Name} ({result.Content.Space.Key})");
+                
+            if (!string.IsNullOrEmpty(result.Excerpt))
+            {
+                var excerpt = result.Excerpt.Length > 150 
+                    ? result.Excerpt.Substring(0, 150) + "..." 
+                    : result.Excerpt;
+                Console.WriteLine($"   📄 Excerpt: {excerpt}");
+            }
+            
+            if (!string.IsNullOrEmpty(result.Url))
+                Console.WriteLine($"   🔗 URL: {result.Url}");
+
+            if (i < searchResults.Results.Count - 1)
+                Console.WriteLine();
+        }
+    }
+
+    /// <summary>
+    /// Views content of a specific Confluence page
+    /// </summary>
+    private async Task ViewConfluencePageAsync()
+    {
+        Console.WriteLine("\n=== VIEW CONFLUENCE PAGE ===");
+        
+        Console.Write("Enter page ID: ");
+        var pageId = Console.ReadLine()?.Trim();
+        
+        if (string.IsNullOrEmpty(pageId))
+        {
+            Console.WriteLine("❌ Page ID cannot be empty.");
+            return;
+        }
+
+        var page = await _confluenceService.GetPageAsync(pageId);
+        
+        if (page == null)
+        {
+            Console.WriteLine($"❌ Page with ID '{pageId}' not found.");
+            return;
+        }
+
+        Console.WriteLine($"\n📄 Page Details:");
+        Console.WriteLine($"Title: {page.Title}");
+        Console.WriteLine($"ID: {page.Id}");
+        Console.WriteLine($"Type: {page.Type}");
+        Console.WriteLine($"Status: {page.Status}");
+        
+        if (page.Space != null)
+            Console.WriteLine($"Space: {page.Space.Name} ({page.Space.Key})");
+            
+        if (page.Version != null)
+        {
+            Console.WriteLine($"Version: {page.Version.Number}");
+            Console.WriteLine($"Last Modified: {page.Version.When:yyyy-MM-dd HH:mm:ss}");
+            if (page.Version.By != null)
+                Console.WriteLine($"Modified By: {page.Version.By.DisplayName}");
+        }
+
+        if (page.Body?.View?.Value != null)
+        {
+            var content = page.Body.View.Value;
+            // Remove HTML tags for console display
+            var plainContent = System.Text.RegularExpressions.Regex.Replace(content, "<.*?>", string.Empty);
+            
+            if (plainContent.Length > 500)
+                plainContent = plainContent.Substring(0, 500) + "\n... (truncated)";
+                
+            Console.WriteLine($"\nContent Preview:\n{plainContent}");
+        }
+
+        if (page.Links?.Webui != null)
+        {
+            var baseUrl = Environment.GetEnvironmentVariable("JIRA_BASE_URL")?.TrimEnd('/');
+            Console.WriteLine($"\n🔗 View in browser: {baseUrl}/wiki{page.Links.Webui}");
+        }
+    }
+
+    /// <summary>
+    /// Creates a new Confluence page
+    /// </summary>
+    private async Task CreateConfluencePageAsync()
+    {
+        Console.WriteLine("\n=== CREATE NEW CONFLUENCE PAGE ===");
+        
+        // First, let user select a space
+        var spaces = await _confluenceService.GetSpacesAsync();
+        if (spaces.Count == 0)
+        {
+            Console.WriteLine("❌ No spaces available. Cannot create page.");
+            return;
+        }
+
+        Console.WriteLine("Available spaces:");
+        for (int i = 0; i < spaces.Count; i++)
+        {
+            Console.WriteLine($"{i + 1}. {spaces[i].Name} ({spaces[i].Key})");
+        }
+        
+        Console.Write($"Select space (1-{spaces.Count}): ");
+        var spaceChoice = Console.ReadLine()?.Trim();
+        
+        if (!int.TryParse(spaceChoice, out var spaceIndex) || spaceIndex < 1 || spaceIndex > spaces.Count)
+        {
+            Console.WriteLine("❌ Invalid space selection.");
+            return;
+        }
+
+        var selectedSpace = spaces[spaceIndex - 1];
+        
+        Console.Write("Enter page title: ");
+        var title = Console.ReadLine()?.Trim();
+        
+        if (string.IsNullOrEmpty(title))
+        {
+            Console.WriteLine("❌ Page title cannot be empty.");
+            return;
+        }
+
+        Console.Write("Enter page content (HTML format): ");
+        var content = Console.ReadLine()?.Trim();
+        
+        if (string.IsNullOrEmpty(content))
+        {
+            content = "<p>This page was created via the JIRA Integration Console Application.</p>";
+        }
+
+        Console.Write("Enter parent page ID (optional, press Enter to skip): ");
+        var parentId = Console.ReadLine()?.Trim();
+        if (string.IsNullOrEmpty(parentId)) parentId = null;
+
+        var createdPage = await _confluenceService.CreatePageAsync(selectedSpace.Key, title, content, parentId);
+        
+        if (createdPage != null)
+        {
+            Console.WriteLine($"✅ Page created successfully!");
+            Console.WriteLine($"📄 Title: {createdPage.Title}");
+            Console.WriteLine($"🆔 ID: {createdPage.Id}");
+            Console.WriteLine($"📚 Space: {selectedSpace.Name} ({selectedSpace.Key})");
+            
+            if (createdPage.Links?.Webui != null)
+            {
+                var baseUrl = Environment.GetEnvironmentVariable("JIRA_BASE_URL")?.TrimEnd('/');
+                Console.WriteLine($"🔗 View in browser: {baseUrl}/wiki{createdPage.Links.Webui}");
+            }
+        }
+        else
+        {
+            Console.WriteLine("❌ Failed to create page. Please check your permissions and try again.");
+        }
+    }
+
+    /// <summary>
+    /// Lists pages in a specific space
+    /// </summary>
+    private async Task ListPagesInSpaceAsync()
+    {
+        Console.WriteLine("\n=== LIST PAGES IN SPACE ===");
+        
+        // First, let user select a space
+        var spaces = await _confluenceService.GetSpacesAsync();
+        if (spaces.Count == 0)
+        {
+            Console.WriteLine("❌ No spaces available.");
+            return;
+        }
+
+        Console.WriteLine("Available spaces:");
+        for (int i = 0; i < spaces.Count; i++)
+        {
+            Console.WriteLine($"{i + 1}. {spaces[i].Name} ({spaces[i].Key})");
+        }
+        
+        Console.Write($"Select space (1-{spaces.Count}): ");
+        var spaceChoice = Console.ReadLine()?.Trim();
+        
+        if (!int.TryParse(spaceChoice, out var spaceIndex) || spaceIndex < 1 || spaceIndex > spaces.Count)
+        {
+            Console.WriteLine("❌ Invalid space selection.");
+            return;
+        }
+
+        var selectedSpace = spaces[spaceIndex - 1];
+        
+        Console.Write("Maximum results [25]: ");
+        var limitInput = Console.ReadLine()?.Trim();
+        var limit = 25;
+        if (!string.IsNullOrEmpty(limitInput) && int.TryParse(limitInput, out var parsedLimit))
+            limit = parsedLimit;
+
+        var pages = await _confluenceService.GetPagesInSpaceAsync(selectedSpace.Key, limit);
+        
+        if (pages.Count == 0)
+        {
+            Console.WriteLine($"❌ No pages found in space '{selectedSpace.Name}'.");
+            return;
+        }
+
+        Console.WriteLine($"\n📚 Found {pages.Count} page(s) in '{selectedSpace.Name}':\n");
+        
+        for (int i = 0; i < pages.Count; i++)
+        {
+            var page = pages[i];
+            Console.WriteLine($"{i + 1}. {page.Title}");
+            Console.WriteLine($"   🆔 ID: {page.Id}");
+            Console.WriteLine($"   📝 Type: {page.Type}");
+            Console.WriteLine($"   🟢 Status: {page.Status}");
+            
+            if (page.Version != null)
+            {
+                Console.WriteLine($"   📅 Last Modified: {page.Version.When:yyyy-MM-dd HH:mm:ss}");
+                if (page.Version.By != null)
+                    Console.WriteLine($"   👤 Modified By: {page.Version.By.DisplayName}");
+            }
+
+            if (i < pages.Count - 1)
+                Console.WriteLine();
+        }
     }
 }
