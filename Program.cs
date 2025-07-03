@@ -101,6 +101,26 @@ class Program
             client.Timeout = TimeSpan.FromSeconds(30);
         });
 
+        services.AddHttpClient<IJiraFieldUpdateService, JiraFieldUpdateService>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+
+        services.AddHttpClient<IJiraCommentService, JiraCommentService>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+
+        services.AddHttpClient<IJiraAdvancedSearchService, JiraAdvancedSearchService>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+
+        services.AddHttpClient<IJiraReportingService, JiraReportingService>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+
         // Configure Jira settings from configuration and environment variables
         services.Configure<JiraSettings>(options =>
         {
@@ -128,6 +148,10 @@ class Program
         services.AddTransient<IJiraTicketService, JiraTicketService>();
         services.AddTransient<IJiraSearchService, JiraSearchService>();
         services.AddTransient<IJiraProjectService, JiraProjectService>();
+        services.AddTransient<IJiraFieldUpdateService, JiraFieldUpdateService>();
+        services.AddTransient<IJiraCommentService, JiraCommentService>();
+        services.AddTransient<IJiraAdvancedSearchService, JiraAdvancedSearchService>();
+        services.AddTransient<IJiraReportingService, JiraReportingService>();
 
         // Register main application
         services.AddTransient<ConsoleApplication>();

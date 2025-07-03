@@ -14,6 +14,10 @@ public class ConsoleApplication
     private readonly IJiraTicketService _ticketService;
     private readonly IJiraSearchService _searchService;
     private readonly IJiraProjectService _projectService;
+    private readonly IJiraFieldUpdateService _fieldUpdateService;
+    private readonly IJiraCommentService _commentService;
+    private readonly IJiraAdvancedSearchService _advancedSearchService;
+    private readonly IJiraReportingService _reportingService;
     private readonly ILogger<ConsoleApplication> _logger;
 
     public ConsoleApplication(
@@ -21,12 +25,20 @@ public class ConsoleApplication
         IJiraTicketService ticketService,
         IJiraSearchService searchService,
         IJiraProjectService projectService,
+        IJiraFieldUpdateService fieldUpdateService,
+        IJiraCommentService commentService,
+        IJiraAdvancedSearchService advancedSearchService,
+        IJiraReportingService reportingService,
         ILogger<ConsoleApplication> logger)
     {
         _authService = authService;
         _ticketService = ticketService;
         _searchService = searchService;
         _projectService = projectService;
+        _fieldUpdateService = fieldUpdateService;
+        _commentService = commentService;
+        _advancedSearchService = advancedSearchService;
+        _reportingService = reportingService;
         _logger = logger;
     }
 
@@ -137,11 +149,26 @@ public class ConsoleApplication
                     case "5":
                         await TransitionTicketAsync();
                         break;
+                    case "6":
+                        await UpdateTicketFieldsAsync();
+                        break;
+                    case "7":
+                        await AddCommentsAsync();
+                        break;
+                    case "8":
+                        await BulkOperationsAsync();
+                        break;
+                    case "9":
+                        await AdvancedSearchAsync();
+                        break;
+                    case "10":
+                        await ReportingFeaturesAsync();
+                        break;
                     case "0":
                         Console.WriteLine("👋 Thank you for using Jira Integration Console!");
                         return;
                     default:
-                        Console.WriteLine("❌ Invalid option. Please select a number from 0-5.");
+                        Console.WriteLine("❌ Invalid option. Please select a number from 0-10.");
                         break;
                 }
             }
@@ -171,6 +198,11 @@ public class ConsoleApplication
         Console.WriteLine("3. 📖 Get Ticket Details");
         Console.WriteLine("4. 🔍 Search Tickets (JQL)");
         Console.WriteLine("5. 🔄 Transition Ticket");
+        Console.WriteLine("6. ✏️  Update Ticket Fields");
+        Console.WriteLine("7. 💬 Add Comments");
+        Console.WriteLine("8. 🔄 Bulk Operations");
+        Console.WriteLine("9. 🔎 Advanced Search");
+        Console.WriteLine("10. 📊 Reporting Features");
         Console.WriteLine("0. ❌ Exit");
         Console.Write("\nChoose an option: ");
     }
@@ -539,6 +571,835 @@ public class ConsoleApplication
         {
             Console.WriteLine($"\n📄 Description:");
             Console.WriteLine($"{ticket.Fields.Description}");
+        }
+    }
+
+    // === Advanced Features Menu Methods ===
+
+    /// <summary>
+    /// Updates ticket fields
+    /// </summary>
+    private async Task UpdateTicketFieldsAsync()
+    {
+        Console.WriteLine("\n=== UPDATE TICKET FIELDS ===");
+
+        try
+        {
+            Console.Write("Enter ticket key (e.g., OPS-7): ");
+            var ticketKey = Console.ReadLine()?.Trim().ToUpper();
+
+            if (string.IsNullOrWhiteSpace(ticketKey))
+            {
+                Console.WriteLine("❌ Ticket key is required.");
+                return;
+            }
+
+            // Get current field values
+            Console.WriteLine($"🔄 Getting current field values for {ticketKey}...");
+            var currentValues = await _fieldUpdateService.GetTicketFieldValuesAsync(ticketKey);
+
+            if (!currentValues.Any())
+            {
+                Console.WriteLine("❌ Could not retrieve ticket information.");
+                return;
+            }
+
+            Console.WriteLine("\nCurrent Values:");
+            foreach (var kvp in currentValues)
+            {
+                Console.WriteLine($"  {kvp.Key}: {kvp.Value}");
+            }
+
+            var updateRequest = new UpdateFieldsRequest();
+
+            Console.Write("\nNew Summary (press Enter to skip): ");
+            var summary = Console.ReadLine()?.Trim();
+            if (!string.IsNullOrWhiteSpace(summary))
+                updateRequest.Summary = summary;
+
+            Console.Write("New Description (press Enter to skip): ");
+            var description = Console.ReadLine()?.Trim();
+            if (!string.IsNullOrWhiteSpace(description))
+                updateRequest.Description = description;
+
+            Console.Write("New Assignee ID (press Enter to skip): ");
+            var assigneeId = Console.ReadLine()?.Trim();
+            if (!string.IsNullOrWhiteSpace(assigneeId))
+                updateRequest.AssigneeId = assigneeId;
+
+            Console.Write("New Priority ID (1=Highest, 2=High, 3=Medium, 4=Low, 5=Lowest, press Enter to skip): ");
+            var priorityInput = Console.ReadLine()?.Trim();
+            if (!string.IsNullOrWhiteSpace(priorityInput))
+                updateRequest.PriorityId = priorityInput;
+
+            Console.Write("New Due Date (yyyy-MM-dd, press Enter to skip): ");
+            var dueDateInput = Console.ReadLine()?.Trim();
+            if (!string.IsNullOrWhiteSpace(dueDateInput) && DateTime.TryParse(dueDateInput, out var dueDate))
+                updateRequest.DueDate = dueDate;
+
+            if (string.IsNullOrWhiteSpace(updateRequest.Summary) &&
+                string.IsNullOrWhiteSpace(updateRequest.Description) &&
+                string.IsNullOrWhiteSpace(updateRequest.AssigneeId) &&
+                string.IsNullOrWhiteSpace(updateRequest.PriorityId) &&
+                !updateRequest.DueDate.HasValue)
+            {
+                Console.WriteLine("ℹ️ No changes specified. Operation cancelled.");
+                return;
+            }
+
+            Console.WriteLine($"🔄 Updating fields for {ticketKey}...");
+            var success = await _fieldUpdateService.UpdateTicketFieldsAsync(ticketKey, updateRequest);
+
+            if (success)
+            {
+                Console.WriteLine($"✅ Successfully updated fields for {ticketKey}!");
+            }
+            else
+            {
+                Console.WriteLine("❌ Failed to update fields. Please check permissions and try again.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error updating ticket fields: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Adds comments to tickets
+    /// </summary>
+    private async Task AddCommentsAsync()
+    {
+        Console.WriteLine("\n=== ADD COMMENTS ===");
+
+        try
+        {
+            Console.WriteLine("1. Add comment to specific ticket");
+            Console.WriteLine("2. Use comment template");
+            Console.WriteLine("3. View existing comments");
+            Console.Write("Choose an option (1-3): ");
+
+            var choice = Console.ReadLine()?.Trim();
+
+            switch (choice)
+            {
+                case "1":
+                    await AddCommentToTicketAsync();
+                    break;
+                case "2":
+                    await UseCommentTemplateAsync();
+                    break;
+                case "3":
+                    await ViewCommentsAsync();
+                    break;
+                default:
+                    Console.WriteLine("❌ Invalid option selected.");
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error in comment operations: {ex.Message}");
+        }
+    }
+
+    private async Task AddCommentToTicketAsync()
+    {
+        Console.Write("Enter ticket key (e.g., OPS-7): ");
+        var ticketKey = Console.ReadLine()?.Trim().ToUpper();
+
+        if (string.IsNullOrWhiteSpace(ticketKey))
+        {
+            Console.WriteLine("❌ Ticket key is required.");
+            return;
+        }
+
+        Console.Write("Enter comment text: ");
+        var commentText = Console.ReadLine()?.Trim();
+
+        if (string.IsNullOrWhiteSpace(commentText))
+        {
+            Console.WriteLine("❌ Comment text is required.");
+            return;
+        }
+
+        Console.Write("Mention users (comma-separated usernames, press Enter to skip): ");
+        var mentionsInput = Console.ReadLine()?.Trim();
+        var mentions = !string.IsNullOrWhiteSpace(mentionsInput)
+            ? mentionsInput.Split(',').Select(m => m.Trim()).ToList()
+            : new List<string>();
+
+        var request = new AddCommentRequest
+        {
+            Body = commentText,
+            MentionedUsers = mentions,
+            NotifyUsers = true
+        };
+
+        Console.WriteLine($"💬 Adding comment to {ticketKey}...");
+        var comment = await _commentService.AddCommentAsync(ticketKey, request);
+
+        if (comment != null)
+        {
+            Console.WriteLine($"✅ Successfully added comment to {ticketKey}!");
+            Console.WriteLine($"Comment ID: {comment.Id}");
+        }
+        else
+        {
+            Console.WriteLine("❌ Failed to add comment. Please check permissions and try again.");
+        }
+    }
+
+    private async Task UseCommentTemplateAsync()
+    {
+        var templates = _commentService.GetCommentTemplates();
+
+        Console.WriteLine("\nAvailable Templates:");
+        for (int i = 0; i < templates.Count; i++)
+        {
+            Console.WriteLine($"{i + 1}. {templates[i].Name} ({templates[i].Category})");
+            Console.WriteLine($"   {templates[i].Template}");
+        }
+
+        Console.Write($"\nSelect template (1-{templates.Count}): ");
+        var templateInput = Console.ReadLine()?.Trim();
+
+        if (!int.TryParse(templateInput, out var templateIndex) ||
+            templateIndex < 1 || templateIndex > templates.Count)
+        {
+            Console.WriteLine("❌ Invalid template selection.");
+            return;
+        }
+
+        var selectedTemplate = templates[templateIndex - 1];
+
+        Console.Write("Enter ticket key (e.g., OPS-7): ");
+        var ticketKey = Console.ReadLine()?.Trim().ToUpper();
+
+        if (string.IsNullOrWhiteSpace(ticketKey))
+        {
+            Console.WriteLine("❌ Ticket key is required.");
+            return;
+        }
+
+        var request = new AddCommentRequest
+        {
+            Body = selectedTemplate.Template,
+            NotifyUsers = true
+        };
+
+        Console.WriteLine($"💬 Adding template comment to {ticketKey}...");
+        var comment = await _commentService.AddCommentAsync(ticketKey, request);
+
+        if (comment != null)
+        {
+            Console.WriteLine($"✅ Successfully added template comment to {ticketKey}!");
+        }
+        else
+        {
+            Console.WriteLine("❌ Failed to add comment. Please check permissions and try again.");
+        }
+    }
+
+    private async Task ViewCommentsAsync()
+    {
+        Console.Write("Enter ticket key (e.g., OPS-7): ");
+        var ticketKey = Console.ReadLine()?.Trim().ToUpper();
+
+        if (string.IsNullOrWhiteSpace(ticketKey))
+        {
+            Console.WriteLine("❌ Ticket key is required.");
+            return;
+        }
+
+        Console.WriteLine($"📖 Getting comments for {ticketKey}...");
+        var comments = await _commentService.GetCommentsAsync(ticketKey);
+
+        if (!comments.Any())
+        {
+            Console.WriteLine("ℹ️ No comments found for this ticket.");
+            return;
+        }
+
+        Console.WriteLine($"\nComments for {ticketKey}:");
+        foreach (var comment in comments)
+        {
+            Console.WriteLine($"\n💬 {comment.Author.DisplayName} - {comment.Created:yyyy-MM-dd HH:mm}");
+            Console.WriteLine($"   {comment.Body}");
+        }
+    }
+
+    /// <summary>
+    /// Bulk operations menu
+    /// </summary>
+    private async Task BulkOperationsAsync()
+    {
+        Console.WriteLine("\n=== BULK OPERATIONS ===");
+
+        try
+        {
+            Console.WriteLine("1. Bulk Update Fields");
+            Console.WriteLine("2. Bulk Transition Tickets");
+            Console.WriteLine("3. Export/Import (CSV)");
+            Console.Write("Choose an option (1-3): ");
+
+            var choice = Console.ReadLine()?.Trim();
+
+            switch (choice)
+            {
+                case "1":
+                    await BulkUpdateFieldsAsync();
+                    break;
+                case "2":
+                    await BulkTransitionTicketsAsync();
+                    break;
+                case "3":
+                    await CsvOperationsAsync();
+                    break;
+                default:
+                    Console.WriteLine("❌ Invalid option selected.");
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error in bulk operations: {ex.Message}");
+        }
+    }
+
+    private async Task BulkUpdateFieldsAsync()
+    {
+        Console.Write("Enter ticket keys (comma-separated, e.g., OPS-1,OPS-2,OPS-3): ");
+        var ticketKeysInput = Console.ReadLine()?.Trim().ToUpper();
+
+        if (string.IsNullOrWhiteSpace(ticketKeysInput))
+        {
+            Console.WriteLine("❌ Ticket keys are required.");
+            return;
+        }
+
+        var ticketKeys = ticketKeysInput.Split(',')
+            .Select(k => k.Trim())
+            .Where(k => !string.IsNullOrWhiteSpace(k))
+            .ToList();
+
+        if (!ticketKeys.Any())
+        {
+            Console.WriteLine("❌ No valid ticket keys provided.");
+            return;
+        }
+
+        var updateRequest = new UpdateFieldsRequest();
+
+        Console.Write("New Summary (applies to all, press Enter to skip): ");
+        var summary = Console.ReadLine()?.Trim();
+        if (!string.IsNullOrWhiteSpace(summary))
+            updateRequest.Summary = summary;
+
+        Console.Write("New Assignee ID (applies to all, press Enter to skip): ");
+        var assigneeId = Console.ReadLine()?.Trim();
+        if (!string.IsNullOrWhiteSpace(assigneeId))
+            updateRequest.AssigneeId = assigneeId;
+
+        Console.Write("New Priority ID (1-5, applies to all, press Enter to skip): ");
+        var priorityInput = Console.ReadLine()?.Trim();
+        if (!string.IsNullOrWhiteSpace(priorityInput))
+            updateRequest.PriorityId = priorityInput;
+
+        if (string.IsNullOrWhiteSpace(updateRequest.Summary) &&
+            string.IsNullOrWhiteSpace(updateRequest.AssigneeId) &&
+            string.IsNullOrWhiteSpace(updateRequest.PriorityId))
+        {
+            Console.WriteLine("ℹ️ No changes specified. Operation cancelled.");
+            return;
+        }
+
+        Console.WriteLine($"🔄 Bulk updating {ticketKeys.Count} tickets...");
+        var result = await _fieldUpdateService.BulkUpdateFieldsAsync(ticketKeys, updateRequest);
+
+        Console.WriteLine($"\n📊 Bulk Update Results:");
+        Console.WriteLine($"✅ Successful: {result.SuccessfulUpdates}");
+        Console.WriteLine($"❌ Failed: {result.FailedUpdates}");
+
+        if (result.FailedTicketKeys.Any())
+        {
+            Console.WriteLine("\nFailed Tickets:");
+            foreach (var failedKey in result.FailedTicketKeys)
+            {
+                Console.WriteLine($"  - {failedKey}");
+            }
+        }
+    }
+
+    private async Task BulkTransitionTicketsAsync()
+    {
+        Console.WriteLine("ℹ️ Bulk transition feature - Use JQL to find tickets first, then transition them one by one.");
+        Console.WriteLine("For now, use the regular Transition Ticket option for individual transitions.");
+        await Task.Delay(100); // Placeholder - would implement actual bulk transitions
+    }
+
+    private async Task CsvOperationsAsync()
+    {
+        Console.WriteLine("ℹ️ CSV Import/Export feature is planned for future release.");
+        Console.WriteLine("For now, you can copy ticket information manually.");
+        await Task.Delay(100); // Placeholder - would implement CSV operations
+    }
+
+    /// <summary>
+    /// Advanced search menu
+    /// </summary>
+    private async Task AdvancedSearchAsync()
+    {
+        Console.WriteLine("\n=== ADVANCED SEARCH ===");
+
+        try
+        {
+            Console.WriteLine("1. Visual JQL Builder");
+            Console.WriteLine("2. Saved Searches");
+            Console.WriteLine("3. Smart Filters");
+            Console.WriteLine("4. Custom JQL Search");
+            Console.Write("Choose an option (1-4): ");
+
+            var choice = Console.ReadLine()?.Trim();
+
+            switch (choice)
+            {
+                case "1":
+                    await VisualJqlBuilderAsync();
+                    break;
+                case "2":
+                    await SavedSearchesAsync();
+                    break;
+                case "3":
+                    await SmartFiltersAsync();
+                    break;
+                case "4":
+                    await CustomJqlSearchAsync();
+                    break;
+                default:
+                    Console.WriteLine("❌ Invalid option selected.");
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error in advanced search: {ex.Message}");
+        }
+    }
+
+    private async Task VisualJqlBuilderAsync()
+    {
+        Console.WriteLine("\n=== VISUAL JQL BUILDER ===");
+
+        var request = new JqlBuilderRequest();
+
+        Console.Write("Project Key (press Enter to skip): ");
+        var projectKey = Console.ReadLine()?.Trim();
+        if (!string.IsNullOrWhiteSpace(projectKey))
+            request.ProjectKey = projectKey;
+
+        Console.Write("Assignee (currentUser, unassigned, or username, press Enter to skip): ");
+        var assignee = Console.ReadLine()?.Trim();
+        if (!string.IsNullOrWhiteSpace(assignee))
+            request.AssigneeId = assignee;
+
+        Console.Write("Status (e.g., Open, In Progress, Done, press Enter to skip): ");
+        var status = Console.ReadLine()?.Trim();
+        if (!string.IsNullOrWhiteSpace(status))
+            request.Status = status;
+
+        Console.Write("Priority (e.g., High, Medium, Low, press Enter to skip): ");
+        var priority = Console.ReadLine()?.Trim();
+        if (!string.IsNullOrWhiteSpace(priority))
+            request.Priority = priority;
+
+        Console.Write("Created after date (yyyy-MM-dd, press Enter to skip): ");
+        var createdAfterInput = Console.ReadLine()?.Trim();
+        if (!string.IsNullOrWhiteSpace(createdAfterInput) && DateTime.TryParse(createdAfterInput, out var createdAfter))
+            request.CreatedAfter = createdAfter;
+
+        Console.Write("Text search (press Enter to skip): ");
+        var textSearch = Console.ReadLine()?.Trim();
+        if (!string.IsNullOrWhiteSpace(textSearch))
+            request.TextSearch = textSearch;
+
+        var jql = _advancedSearchService.BuildJqlQuery(request);
+        Console.WriteLine($"\n🔍 Generated JQL: {jql}");
+
+        if (string.IsNullOrWhiteSpace(jql))
+        {
+            Console.WriteLine("ℹ️ No search criteria specified.");
+            return;
+        }
+
+        Console.Write("\nExecute this search? (y/n): ");
+        var execute = Console.ReadLine()?.Trim().ToLower();
+
+        if (execute == "y" || execute == "yes")
+        {
+            var searchRequest = new AdvancedSearchRequest { JqlQuery = jql };
+            await ExecuteAdvancedSearchAsync(searchRequest);
+        }
+    }
+
+    private async Task SavedSearchesAsync()
+    {
+        Console.WriteLine("\n=== SAVED SEARCHES ===");
+
+        Console.WriteLine("1. View Saved Searches");
+        Console.WriteLine("2. Save Current Search");
+        Console.WriteLine("3. Execute Saved Search");
+        Console.Write("Choose an option (1-3): ");
+
+        var choice = Console.ReadLine()?.Trim();
+
+        switch (choice)
+        {
+            case "1":
+                await ViewSavedSearchesAsync();
+                break;
+            case "2":
+                await SaveCurrentSearchAsync();
+                break;
+            case "3":
+                await ExecuteSavedSearchAsync();
+                break;
+            default:
+                Console.WriteLine("❌ Invalid option selected.");
+                break;
+        }
+    }
+
+    private async Task ViewSavedSearchesAsync()
+    {
+        var savedSearches = await _advancedSearchService.GetSavedSearchesAsync();
+
+        if (!savedSearches.Any())
+        {
+            Console.WriteLine("ℹ️ No saved searches found.");
+            return;
+        }
+
+        Console.WriteLine("\nSaved Searches:");
+        foreach (var search in savedSearches)
+        {
+            Console.WriteLine($"\n📝 {search.Name}");
+            Console.WriteLine($"   Description: {search.Description}");
+            Console.WriteLine($"   JQL: {search.JqlQuery}");
+            Console.WriteLine($"   Created: {search.Created:yyyy-MM-dd HH:mm}");
+        }
+    }
+
+    private async Task SaveCurrentSearchAsync()
+    {
+        Console.Write("Enter JQL query to save: ");
+        var jql = Console.ReadLine()?.Trim();
+
+        if (string.IsNullOrWhiteSpace(jql))
+        {
+            Console.WriteLine("❌ JQL query is required.");
+            return;
+        }
+
+        Console.Write("Enter search name: ");
+        var name = Console.ReadLine()?.Trim();
+
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            Console.WriteLine("❌ Search name is required.");
+            return;
+        }
+
+        Console.Write("Enter description (optional): ");
+        var description = Console.ReadLine()?.Trim() ?? string.Empty;
+
+        var saveRequest = new SaveSearchRequest
+        {
+            Name = name,
+            Description = description,
+            JqlQuery = jql,
+            IsShared = false
+        };
+
+        var savedSearch = await _advancedSearchService.SaveSearchAsync(saveRequest);
+        Console.WriteLine($"✅ Successfully saved search '{savedSearch.Name}' with ID: {savedSearch.Id}");
+    }
+
+    private async Task ExecuteSavedSearchAsync()
+    {
+        var savedSearches = await _advancedSearchService.GetSavedSearchesAsync();
+
+        if (!savedSearches.Any())
+        {
+            Console.WriteLine("ℹ️ No saved searches found. Create one first.");
+            return;
+        }
+
+        Console.WriteLine("\nSaved Searches:");
+        for (int i = 0; i < savedSearches.Count; i++)
+        {
+            Console.WriteLine($"{i + 1}. {savedSearches[i].Name}");
+        }
+
+        Console.Write($"\nSelect search to execute (1-{savedSearches.Count}): ");
+        var input = Console.ReadLine()?.Trim();
+
+        if (!int.TryParse(input, out var index) || index < 1 || index > savedSearches.Count)
+        {
+            Console.WriteLine("❌ Invalid search selection.");
+            return;
+        }
+
+        var selectedSearch = savedSearches[index - 1];
+        Console.WriteLine($"🔍 Executing search: {selectedSearch.Name}");
+
+        var result = await _advancedSearchService.ExecuteSavedSearchAsync(selectedSearch.Id);
+        DisplaySearchResults(result);
+    }
+
+    private async Task SmartFiltersAsync()
+    {
+        var smartFilters = _advancedSearchService.GetSmartFilters();
+
+        Console.WriteLine("\n🎯 Smart Filters:");
+        for (int i = 0; i < smartFilters.Count; i++)
+        {
+            Console.WriteLine($"{i + 1}. {smartFilters[i].Name} ({smartFilters[i].Category})");
+            Console.WriteLine($"   {smartFilters[i].Description}");
+        }
+
+        Console.Write($"\nSelect filter to execute (1-{smartFilters.Count}): ");
+        var input = Console.ReadLine()?.Trim();
+
+        if (!int.TryParse(input, out var index) || index < 1 || index > smartFilters.Count)
+        {
+            Console.WriteLine("❌ Invalid filter selection.");
+            return;
+        }
+
+        var selectedFilter = smartFilters[index - 1];
+        Console.WriteLine($"🔍 Executing filter: {selectedFilter.Name}");
+
+        var searchRequest = new AdvancedSearchRequest { JqlQuery = selectedFilter.JqlQuery };
+        await ExecuteAdvancedSearchAsync(searchRequest);
+    }
+
+    private async Task CustomJqlSearchAsync()
+    {
+        Console.Write("Enter custom JQL query: ");
+        var jql = Console.ReadLine()?.Trim();
+
+        if (string.IsNullOrWhiteSpace(jql))
+        {
+            Console.WriteLine("❌ JQL query is required.");
+            return;
+        }
+
+        var searchRequest = new AdvancedSearchRequest { JqlQuery = jql };
+        await ExecuteAdvancedSearchAsync(searchRequest);
+    }
+
+    private async Task ExecuteAdvancedSearchAsync(AdvancedSearchRequest request)
+    {
+        Console.WriteLine("🔍 Executing search...");
+        var result = await _advancedSearchService.AdvancedSearchAsync(request);
+        DisplaySearchResults(result);
+    }
+
+    private static void DisplaySearchResults(JiraSearchResult result)
+    {
+        Console.WriteLine($"\n📊 Search Results ({result.Issues.Count} of {result.Total}) - {result.SearchTime.TotalMilliseconds:F0}ms");
+
+        if (!result.Issues.Any())
+        {
+            Console.WriteLine("ℹ️ No tickets found matching the search criteria.");
+            return;
+        }
+
+        foreach (var issue in result.Issues)
+        {
+            Console.WriteLine($"\n🎫 {issue.Key} - {issue.Fields.Summary}");
+            Console.WriteLine($"   📊 {issue.Fields.Status.Name} | ⚡ {issue.Fields.Priority.Name} | 👤 {issue.Fields.Assignee?.DisplayName ?? "Unassigned"}");
+        }
+    }
+
+    /// <summary>
+    /// Reporting features menu
+    /// </summary>
+    private async Task ReportingFeaturesAsync()
+    {
+        Console.WriteLine("\n=== REPORTING FEATURES ===");
+
+        try
+        {
+            var reportTypes = _reportingService.GetAvailableReportTypes();
+
+            Console.WriteLine("Available Reports:");
+            for (int i = 0; i < reportTypes.Count; i++)
+            {
+                Console.WriteLine($"{i + 1}. {reportTypes[i].Name}");
+                Console.WriteLine($"   {reportTypes[i].Description}");
+            }
+
+            Console.Write($"\nSelect report type (1-{reportTypes.Count}): ");
+            var input = Console.ReadLine()?.Trim();
+
+            if (!int.TryParse(input, out var index) || index < 1 || index > reportTypes.Count)
+            {
+                Console.WriteLine("❌ Invalid report selection.");
+                return;
+            }
+
+            var selectedReport = reportTypes[index - 1];
+
+            switch (selectedReport.Id)
+            {
+                case "sprint":
+                    await GenerateSprintReportAsync();
+                    break;
+                case "team":
+                    await GenerateTeamDashboardAsync();
+                    break;
+                case "executive":
+                    await GenerateExecutiveSummaryAsync();
+                    break;
+                default:
+                    Console.WriteLine("ℹ️ This report type is not yet implemented.");
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error in reporting features: {ex.Message}");
+        }
+    }
+
+    private async Task GenerateSprintReportAsync()
+    {
+        Console.Write("Enter Sprint ID: ");
+        var sprintId = Console.ReadLine()?.Trim();
+
+        if (string.IsNullOrWhiteSpace(sprintId))
+        {
+            Console.WriteLine("❌ Sprint ID is required.");
+            return;
+        }
+
+        Console.WriteLine("📊 Generating sprint report...");
+        var report = await _reportingService.GenerateSprintReportAsync(sprintId);
+
+        Console.WriteLine($"\n🏃‍♂️ SPRINT REPORT: {report.SprintName}");
+        Console.WriteLine("==========================================");
+        Console.WriteLine($"📅 Period: {report.StartDate:yyyy-MM-dd} to {report.EndDate:yyyy-MM-dd}");
+        Console.WriteLine($"📈 Planned Points: {report.PlannedPoints}");
+        Console.WriteLine($"✅ Completed Points: {report.CompletedPoints}");
+        Console.WriteLine($"⏳ Remaining Points: {report.RemainingPoints}");
+        Console.WriteLine($"🎯 Completion Rate: {(report.PlannedPoints > 0 ? (double)report.CompletedPoints / report.PlannedPoints * 100 : 0):F1}%");
+
+        Console.WriteLine($"\n✅ Completed Issues ({report.CompletedIssues.Count}):");
+        foreach (var issue in report.CompletedIssues.Take(5))
+        {
+            Console.WriteLine($"  - {issue.Key}: {issue.Fields.Summary}");
+        }
+        if (report.CompletedIssues.Count > 5)
+        {
+            Console.WriteLine($"  ... and {report.CompletedIssues.Count - 5} more");
+        }
+
+        Console.WriteLine($"\n⏳ Incomplete Issues ({report.IncompleteIssues.Count}):");
+        foreach (var issue in report.IncompleteIssues.Take(5))
+        {
+            Console.WriteLine($"  - {issue.Key}: {issue.Fields.Summary}");
+        }
+        if (report.IncompleteIssues.Count > 5)
+        {
+            Console.WriteLine($"  ... and {report.IncompleteIssues.Count - 5} more");
+        }
+    }
+
+    private async Task GenerateTeamDashboardAsync()
+    {
+        Console.Write("Enter Project Key: ");
+        var projectKey = Console.ReadLine()?.Trim();
+
+        if (string.IsNullOrWhiteSpace(projectKey))
+        {
+            Console.WriteLine("❌ Project key is required.");
+            return;
+        }
+
+        Console.WriteLine("📊 Generating team dashboard...");
+        var dashboard = await _reportingService.GenerateTeamDashboardAsync(projectKey);
+
+        Console.WriteLine($"\n👥 TEAM DASHBOARD: {dashboard.ProjectName}");
+        Console.WriteLine("==========================================");
+
+        Console.WriteLine("\n👤 Team Workloads:");
+        foreach (var workload in dashboard.TeamWorkloads)
+        {
+            Console.WriteLine($"  {workload.UserName}:");
+            Console.WriteLine($"    📂 Open: {workload.OpenTickets} | 🔄 In Progress: {workload.InProgressTickets} | ✅ Completed: {workload.CompletedTickets}");
+            Console.WriteLine($"    📊 Total Points: {workload.TotalPoints}");
+        }
+
+        Console.WriteLine("\n📊 Status Distribution:");
+        foreach (var status in dashboard.StatusDistribution)
+        {
+            Console.WriteLine($"  {status.Key}: {status.Value} tickets");
+        }
+
+        Console.WriteLine("\n⚡ Priority Distribution:");
+        foreach (var priority in dashboard.PriorityDistribution)
+        {
+            Console.WriteLine($"  {priority.Key}: {priority.Value} tickets");
+        }
+    }
+
+    private async Task GenerateExecutiveSummaryAsync()
+    {
+        Console.Write("Enter Project Key: ");
+        var projectKey = Console.ReadLine()?.Trim();
+
+        if (string.IsNullOrWhiteSpace(projectKey))
+        {
+            Console.WriteLine("❌ Project key is required.");
+            return;
+        }
+
+        Console.WriteLine("📊 Generating executive summary...");
+        var summary = await _reportingService.GenerateExecutiveSummaryAsync(projectKey);
+
+        Console.WriteLine($"\n📋 EXECUTIVE SUMMARY: {summary.ProjectName}");
+        Console.WriteLine("==========================================");
+        Console.WriteLine($"📅 Report Date: {summary.ReportDate:yyyy-MM-dd HH:mm}");
+
+        Console.WriteLine($"\n📊 Project Metrics:");
+        Console.WriteLine($"  📝 Total Issues: {summary.TotalIssues}");
+        Console.WriteLine($"  ✅ Completed: {summary.CompletedIssues} ({summary.CompletionPercentage}%)");
+        Console.WriteLine($"  🔄 In Progress: {summary.InProgressIssues}");
+        Console.WriteLine($"  📂 Open: {summary.OpenIssues}");
+
+        Console.WriteLine($"\n🎯 Key Achievements:");
+        foreach (var achievement in summary.KeyAchievements)
+        {
+            Console.WriteLine($"  • {achievement}");
+        }
+
+        Console.WriteLine($"\n⚠️ Risk Assessment:");
+        foreach (var risk in summary.Risks)
+        {
+            Console.WriteLine($"  • {risk}");
+        }
+
+        Console.Write("\nExport this report? (y/n): ");
+        var export = Console.ReadLine()?.Trim().ToLower();
+
+        if (export == "y" || export == "yes")
+        {
+            Console.WriteLine("📄 Exporting report...");
+            var pdfBytes = await _reportingService.ExportReportToPdfAsync(summary, "Executive Summary");
+            Console.WriteLine($"✅ Report exported ({pdfBytes.Length} bytes)");
+            Console.WriteLine("ℹ️ In a real implementation, this would save to a file.");
         }
     }
 }

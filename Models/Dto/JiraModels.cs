@@ -353,3 +353,180 @@ public class JiraSearchResponse
     [JsonProperty("issues")]
     public List<JiraIssue> Issues { get; set; } = new();
 }
+
+// === Advanced Features Models ===
+
+/// <summary>
+/// JIRA comment model
+/// </summary>
+public class JiraComment
+{
+    [JsonProperty("id")]
+    public string Id { get; set; } = string.Empty;
+
+    [JsonProperty("body")]
+    public string Body { get; set; } = string.Empty;
+
+    [JsonProperty("author")]
+    public JiraUser Author { get; set; } = new();
+
+    [JsonProperty("created")]
+    public DateTime Created { get; set; }
+
+    [JsonProperty("updated")]
+    public DateTime Updated { get; set; }
+}
+
+/// <summary>
+/// JIRA field definition
+/// </summary>
+public class JiraField
+{
+    [JsonProperty("id")]
+    public string Id { get; set; } = string.Empty;
+
+    [JsonProperty("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [JsonProperty("schema")]
+    public JiraFieldSchema Schema { get; set; } = new();
+
+    [JsonProperty("required")]
+    public bool Required { get; set; }
+}
+
+/// <summary>
+/// JIRA field schema
+/// </summary>
+public class JiraFieldSchema
+{
+    [JsonProperty("type")]
+    public string Type { get; set; } = string.Empty;
+
+    [JsonProperty("system")]
+    public string System { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Comment template for predefined responses
+/// </summary>
+public class CommentTemplate
+{
+    public string Name { get; set; } = string.Empty;
+    public string Template { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Bulk update operation result
+/// </summary>
+public class BulkUpdateResult
+{
+    public int TotalTickets { get; set; }
+    public int SuccessfulUpdates { get; set; }
+    public int FailedUpdates { get; set; }
+    public List<string> FailedTicketKeys { get; set; } = new();
+    public List<string> ErrorMessages { get; set; } = new();
+}
+
+/// <summary>
+/// Saved search definition
+/// </summary>
+public class SavedSearch
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string JqlQuery { get; set; } = string.Empty;
+    public DateTime Created { get; set; }
+    public bool IsShared { get; set; }
+}
+
+/// <summary>
+/// Smart filter definition
+/// </summary>
+public class SmartFilter
+{
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string JqlQuery { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Sprint report data
+/// </summary>
+public class SprintReport
+{
+    public string SprintName { get; set; } = string.Empty;
+    public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
+    public int PlannedPoints { get; set; }
+    public int CompletedPoints { get; set; }
+    public int RemainingPoints { get; set; }
+    public List<JiraIssue> CompletedIssues { get; set; } = new();
+    public List<JiraIssue> IncompleteIssues { get; set; } = new();
+}
+
+/// <summary>
+/// Team dashboard data
+/// </summary>
+public class TeamDashboard
+{
+    public string ProjectName { get; set; } = string.Empty;
+    public List<TeamMemberWorkload> TeamWorkloads { get; set; } = new();
+    public Dictionary<string, int> StatusDistribution { get; set; } = new();
+    public Dictionary<string, int> PriorityDistribution { get; set; } = new();
+}
+
+/// <summary>
+/// Team member workload information
+/// </summary>
+public class TeamMemberWorkload
+{
+    public string UserName { get; set; } = string.Empty;
+    public int OpenTickets { get; set; }
+    public int InProgressTickets { get; set; }
+    public int CompletedTickets { get; set; }
+    public int TotalPoints { get; set; }
+}
+
+/// <summary>
+/// Executive summary report
+/// </summary>
+public class ExecutiveSummary
+{
+    public string ProjectName { get; set; } = string.Empty;
+    public DateTime ReportDate { get; set; }
+    public int TotalIssues { get; set; }
+    public int CompletedIssues { get; set; }
+    public int InProgressIssues { get; set; }
+    public int OpenIssues { get; set; }
+    public double CompletionPercentage { get; set; }
+    public List<string> KeyAchievements { get; set; } = new();
+    public List<string> Risks { get; set; } = new();
+}
+
+/// <summary>
+/// Report type definition
+/// </summary>
+public class ReportType
+{
+    public string Id { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public List<string> RequiredParameters { get; set; } = new();
+}
+
+/// <summary>
+/// Extended search result with more metadata
+/// </summary>
+public class JiraSearchResult
+{
+    public List<JiraIssue> Issues { get; set; } = new();
+    public int Total { get; set; }
+    public int StartAt { get; set; }
+    public int MaxResults { get; set; }
+    public string JqlQuery { get; set; } = string.Empty;
+    public TimeSpan SearchTime { get; set; }
+}

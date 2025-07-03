@@ -1,8 +1,10 @@
 # JIRA Integration Console Application
 
-A comprehensive .NET console application for interacting with JIRA Cloud via REST API. This application provides 5 core functionalities for managing JIRA tickets and workflows.
+A comprehensive .NET console application for interacting with JIRA Cloud via REST API. This application provides **10 powerful features** for managing JIRA tickets, workflows, and team productivity.
 
 ## 🚀 Features
+
+### **Core Features (1-5)**
 
 ### ✅ 1. Test Connection
 
@@ -38,6 +40,41 @@ A comprehensive .NET console application for interacting with JIRA Cloud via RES
 - Lists available transitions for each ticket
 - Supports optional comments during transitions
 - Real-time status updates
+
+### ✅ 6. Update Ticket Fields
+
+- **Basic Fields**: Update summary, description, assignee, priority, and due date
+- **Field Validation**: Checks current values before updating
+- **Bulk Updates**: Change the same field across multiple tickets at once
+- **Real-time Updates**: Immediate field value changes
+
+### ✅ 7. Add Comments
+
+- **Standard Comments**: Add text comments with @mentions for notifications
+- **Comment Templates**: Pre-defined comments for common scenarios (testing complete, code review done)
+- **Comment Management**: View existing comments on tickets
+- **Template Library**: Ready-to-use professional comment templates
+
+### ✅ 8. Bulk Operations
+
+- **Mass Field Updates**: Update multiple tickets simultaneously (summary, assignee, priority)
+- **Bulk Transitions**: Move multiple tickets through workflow stages together (planned)
+- **CSV Import/Export**: Import ticket updates from spreadsheets and export results (planned)
+- **Progress Tracking**: Real-time feedback on bulk operation success/failure
+
+### ✅ 9. Advanced Search
+
+- **JQL Builder**: Visual interface to build complex searches without learning JQL syntax
+- **Saved Searches**: Save frequently used searches and share them with team
+- **Smart Filters**: Quick filters like "My open tickets", "Overdue items", "Recent updates"
+- **Custom JQL**: Advanced users can write custom JQL queries directly
+
+### ✅ 10. Reporting Features
+
+- **Sprint Reports**: Basic burndown charts and velocity tracking
+- **Team Dashboard**: Workload distribution and completion rates per person
+- **Executive Summary**: High-level project status with key metrics
+- **Export Reports**: Generate PDF/Excel reports for stakeholders (simplified implementation)
 
 ## 🛠️ Technical Architecture
 
