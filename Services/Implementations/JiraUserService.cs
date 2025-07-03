@@ -31,7 +31,7 @@ public class JiraUserService : BaseJiraHttpService, IJiraUserService
             var url = $"user/search?query={encodedQuery}&maxResults={maxResults}";
 
             var response = await GetAsync<List<JiraUser>>(url);
-            
+
             _logger.LogInformation("Found {Count} users matching query: {Query}", response?.Count ?? 0, query);
             return response ?? new List<JiraUser>();
         }

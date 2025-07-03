@@ -654,7 +654,7 @@ public class ConsoleApplication
                         assigneeId = null;
                     }
                 }
-                
+
                 if (!string.IsNullOrWhiteSpace(assigneeId))
                     updateRequest.AssigneeId = assigneeId;
             }
@@ -1536,7 +1536,7 @@ public class ConsoleApplication
             Console.WriteLine($"   📧 Email: {user.EmailAddress ?? "N/A"}");
             Console.WriteLine($"   🆔 Account ID: {user.AccountId}");
             Console.WriteLine($"   🟢 Status: {(user.Active ? "Active" : "Inactive")}");
-            
+
             if (i < users.Count - 1)
                 Console.WriteLine();
         }
@@ -1620,7 +1620,7 @@ public class ConsoleApplication
             Console.WriteLine($"   📧 Email: {user.EmailAddress ?? "N/A"}");
             Console.WriteLine($"   🆔 Account ID: {user.AccountId}");
             Console.WriteLine($"   🟢 Status: {(user.Active ? "Active" : "Inactive")}");
-            
+
             if (i < users.Count - 1)
                 Console.WriteLine();
         }
@@ -1671,7 +1671,7 @@ public class ConsoleApplication
             Console.WriteLine($"   📧 Email: {user.EmailAddress ?? "N/A"}");
             Console.WriteLine($"   🆔 Account ID: {user.AccountId}");
             Console.WriteLine($"   🟢 Status: {(user.Active ? "Active" : "Inactive")}");
-            
+
             if (i < users.Count - 1)
                 Console.WriteLine();
         }
