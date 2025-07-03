@@ -297,21 +297,6 @@ Enter page content: <p>Release notes for version 2.1...</p>
 
 ## 🔧 Configuration Options
 
-### **JiraSettings (appsettings.json)**
-
-```json
-{
-  "JiraSettings": {
-    "BaseUrl": "", // Set via JIRA_BASE_URL env var
-    "Email": "", // Set via JIRA_USER_EMAIL env var
-    "ApiToken": "", // Set via JIRA_API_TOKEN env var
-    "ProjectKey": "", // Set via JIRA_PROJECT_KEY env var
-    "MaxResults": 50, // Default search result limit
-    "TimeoutSeconds": 30 // HTTP request timeout
-  }
-}
-```
-
 ### **Environment Variables**
 
 - `JIRA_BASE_URL`: Your JIRA instance URL
