@@ -1,6 +1,6 @@
 # JIRA Integration Console Application
 
-A comprehensive .NET console application for interacting with JIRA Cloud via REST API. This application provides **10 powerful features** for managing JIRA tickets, workflows, and team productivity.
+A comprehensive .NET console application for interacting with JIRA Cloud via REST API. This application provides **11 powerful features** for managing JIRA tickets, workflows, and team productivity.
 
 ## 🚀 Features
 
@@ -75,6 +75,14 @@ A comprehensive .NET console application for interacting with JIRA Cloud via RES
 - **Team Dashboard**: Workload distribution and completion rates per person
 - **Executive Summary**: High-level project status with key metrics
 - **Export Reports**: Generate PDF/Excel reports for stakeholders (simplified implementation)
+
+### ✅ 11. User Management
+
+- **Search Users**: Find users by name, email, or username with detailed results
+- **Account ID Lookup**: Get user details by account ID for verification
+- **Assignable Users**: List users who can be assigned to specific projects or issues
+- **Assignment Helper**: Provides account IDs needed for ticket assignment operations
+- **Validation**: Helps ensure correct account IDs are used when updating assignees
 
 ## 🛠️ Technical Architecture
 

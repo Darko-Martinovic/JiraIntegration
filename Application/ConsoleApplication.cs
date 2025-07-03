@@ -18,6 +18,7 @@ public class ConsoleApplication
     private readonly IJiraCommentService _commentService;
     private readonly IJiraAdvancedSearchService _advancedSearchService;
     private readonly IJiraReportingService _reportingService;
+    private readonly IJiraUserService _userService;
     private readonly ILogger<ConsoleApplication> _logger;
 
     public ConsoleApplication(
@@ -29,6 +30,7 @@ public class ConsoleApplication
         IJiraCommentService commentService,
         IJiraAdvancedSearchService advancedSearchService,
         IJiraReportingService reportingService,
+        IJiraUserService userService,
         ILogger<ConsoleApplication> logger)
     {
         _authService = authService;
@@ -39,6 +41,7 @@ public class ConsoleApplication
         _commentService = commentService;
         _advancedSearchService = advancedSearchService;
         _reportingService = reportingService;
+        _userService = userService;
         _logger = logger;
     }
 
@@ -83,6 +86,12 @@ public class ConsoleApplication
         Console.WriteLine("• Get Ticket Details - Retrieve ticket info");
         Console.WriteLine("• Search Tickets - JQL search functionality");
         Console.WriteLine("• Transition Ticket - Move tickets through workflow");
+        Console.WriteLine("• Update Fields - Modify ticket fields");
+        Console.WriteLine("• Add Comments - Add comments to tickets");
+        Console.WriteLine("• Bulk Operations - Process multiple tickets");
+        Console.WriteLine("• Advanced Search - Complex queries & filters");
+        Console.WriteLine("• Reporting - Generate reports and analytics");
+        Console.WriteLine("• User Management - Find account IDs for assignment");
         Console.WriteLine("==========================================\n");
     }
 
@@ -164,11 +173,14 @@ public class ConsoleApplication
                     case "10":
                         await ReportingFeaturesAsync();
                         break;
+                    case "11":
+                        await UserManagementAsync();
+                        break;
                     case "0":
                         Console.WriteLine("👋 Thank you for using Jira Integration Console!");
                         return;
                     default:
-                        Console.WriteLine("❌ Invalid option. Please select a number from 0-10.");
+                        Console.WriteLine("❌ Invalid option. Please select a number from 0-11.");
                         break;
                 }
             }
@@ -203,6 +215,7 @@ public class ConsoleApplication
         Console.WriteLine("8. 🔄 Bulk Operations");
         Console.WriteLine("9. 🔎 Advanced Search");
         Console.WriteLine("10. 📊 Reporting Features");
+        Console.WriteLine("11. 👥 User Management");
         Console.WriteLine("0. ❌ Exit");
         Console.Write("\nChoose an option: ");
     }
@@ -622,10 +635,29 @@ public class ConsoleApplication
             if (!string.IsNullOrWhiteSpace(description))
                 updateRequest.Description = description;
 
-            Console.Write("New Assignee ID (press Enter to skip): ");
+            Console.WriteLine("\n💡 Need to assign a ticket? Use option 11 (User Management) to find account IDs!");
+            Console.Write("New Assignee Account ID (press Enter to skip): ");
             var assigneeId = Console.ReadLine()?.Trim();
             if (!string.IsNullOrWhiteSpace(assigneeId))
-                updateRequest.AssigneeId = assigneeId;
+            {
+                // Validate account ID format (should be a valid account ID)
+                if (assigneeId.Length < 10 || !assigneeId.All(c => char.IsLetterOrDigit(c) || c == '-'))
+                {
+                    Console.WriteLine("⚠️ Warning: This doesn't look like a valid account ID.");
+                    Console.WriteLine("   Account IDs are typically long alphanumeric strings.");
+                    Console.WriteLine("   Use User Management (option 11) to find the correct account ID.");
+                    Console.Write("Continue anyway? (y/n): ");
+                    var confirm = Console.ReadLine()?.Trim().ToLower();
+                    if (confirm != "y" && confirm != "yes")
+                    {
+                        Console.WriteLine("❌ Assignee update cancelled.");
+                        assigneeId = null;
+                    }
+                }
+                
+                if (!string.IsNullOrWhiteSpace(assigneeId))
+                    updateRequest.AssigneeId = assigneeId;
+            }
 
             Console.Write("New Priority ID (1=Highest, 2=High, 3=Medium, 4=Low, 5=Lowest, press Enter to skip): ");
             var priorityInput = Console.ReadLine()?.Trim();
@@ -1401,5 +1433,249 @@ public class ConsoleApplication
             Console.WriteLine($"✅ Report exported ({pdfBytes.Length} bytes)");
             Console.WriteLine("ℹ️ In a real implementation, this would save to a file.");
         }
+    }
+
+    /// <summary>
+    /// User Management features submenu
+    /// </summary>
+    private async Task UserManagementAsync()
+    {
+        Console.WriteLine("\n=== USER MANAGEMENT ===");
+        Console.WriteLine("This feature helps you find user account IDs needed for ticket assignment.");
+        Console.WriteLine();
+
+        while (true)
+        {
+            Console.WriteLine("1. 🔍 Search Users");
+            Console.WriteLine("2. 👤 Get User by Account ID");
+            Console.WriteLine("3. 📋 Get Assignable Users for Project");
+            Console.WriteLine("4. 🎫 Get Assignable Users for Issue");
+            Console.WriteLine("0. ⬅️ Back to Main Menu");
+            Console.Write("\nChoose an option: ");
+
+            var choice = Console.ReadLine()?.Trim();
+
+            try
+            {
+                switch (choice)
+                {
+                    case "1":
+                        await SearchUsersAsync();
+                        break;
+                    case "2":
+                        await GetUserByAccountIdAsync();
+                        break;
+                    case "3":
+                        await GetAssignableUsersForProjectAsync();
+                        break;
+                    case "4":
+                        await GetAssignableUsersForIssueAsync();
+                        break;
+                    case "0":
+                        return;
+                    default:
+                        Console.WriteLine("❌ Invalid option. Please select a number from 0-4.");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in user management operation");
+                Console.WriteLine($"❌ Error: {ex.Message}");
+            }
+
+            if (choice != "0")
+            {
+                Console.WriteLine("\nPress any key to continue...");
+                Console.ReadKey();
+                Console.Clear();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Search for users by name, email, or username
+    /// </summary>
+    private async Task SearchUsersAsync()
+    {
+        Console.WriteLine("\n=== SEARCH USERS ===");
+        Console.Write("Enter search query (name, email, or username): ");
+        var query = Console.ReadLine()?.Trim();
+
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            Console.WriteLine("❌ Search query cannot be empty.");
+            return;
+        }
+
+        Console.Write("Maximum results (default 20): ");
+        var maxResultsInput = Console.ReadLine()?.Trim();
+        var maxResults = 20;
+        if (!string.IsNullOrWhiteSpace(maxResultsInput) && int.TryParse(maxResultsInput, out var parsed))
+        {
+            maxResults = Math.Max(1, Math.Min(100, parsed)); // Limit between 1-100
+        }
+
+        Console.WriteLine($"\n🔍 Searching for users matching '{query}'...");
+
+        var users = await _userService.SearchUsersAsync(query, maxResults);
+
+        if (!users.Any())
+        {
+            Console.WriteLine("❌ No users found matching your search criteria.");
+            return;
+        }
+
+        Console.WriteLine($"\n✅ Found {users.Count} user(s):");
+        Console.WriteLine("==========================================");
+
+        for (int i = 0; i < users.Count; i++)
+        {
+            var user = users[i];
+            Console.WriteLine($"{i + 1}. {user.DisplayName}");
+            Console.WriteLine($"   📧 Email: {user.EmailAddress ?? "N/A"}");
+            Console.WriteLine($"   🆔 Account ID: {user.AccountId}");
+            Console.WriteLine($"   🟢 Status: {(user.Active ? "Active" : "Inactive")}");
+            
+            if (i < users.Count - 1)
+                Console.WriteLine();
+        }
+
+        Console.WriteLine("\n💡 Tip: Copy the Account ID to use when assigning tickets!");
+    }
+
+    /// <summary>
+    /// Get user details by account ID
+    /// </summary>
+    private async Task GetUserByAccountIdAsync()
+    {
+        Console.WriteLine("\n=== GET USER BY ACCOUNT ID ===");
+        Console.Write("Enter user account ID: ");
+        var accountId = Console.ReadLine()?.Trim();
+
+        if (string.IsNullOrWhiteSpace(accountId))
+        {
+            Console.WriteLine("❌ Account ID cannot be empty.");
+            return;
+        }
+
+        Console.WriteLine($"\n🔍 Looking up user with account ID: {accountId}...");
+
+        var user = await _userService.GetUserByAccountIdAsync(accountId);
+
+        if (user == null)
+        {
+            Console.WriteLine("❌ User not found with the provided account ID.");
+            return;
+        }
+
+        Console.WriteLine($"\n✅ User Details:");
+        Console.WriteLine("==========================================");
+        Console.WriteLine($"👤 Display Name: {user.DisplayName}");
+        Console.WriteLine($"📧 Email: {user.EmailAddress ?? "N/A"}");
+        Console.WriteLine($"🆔 Account ID: {user.AccountId}");
+        Console.WriteLine($"🟢 Status: {(user.Active ? "Active" : "Inactive")}");
+    }
+
+    /// <summary>
+    /// Get assignable users for a project
+    /// </summary>
+    private async Task GetAssignableUsersForProjectAsync()
+    {
+        Console.WriteLine("\n=== GET ASSIGNABLE USERS FOR PROJECT ===");
+        Console.Write("Enter project key (e.g., PROJ): ");
+        var projectKey = Console.ReadLine()?.Trim().ToUpper();
+
+        if (string.IsNullOrWhiteSpace(projectKey))
+        {
+            Console.WriteLine("❌ Project key cannot be empty.");
+            return;
+        }
+
+        Console.Write("Maximum results (default 20): ");
+        var maxResultsInput = Console.ReadLine()?.Trim();
+        var maxResults = 20;
+        if (!string.IsNullOrWhiteSpace(maxResultsInput) && int.TryParse(maxResultsInput, out var parsed))
+        {
+            maxResults = Math.Max(1, Math.Min(100, parsed)); // Limit between 1-100
+        }
+
+        Console.WriteLine($"\n🔍 Getting assignable users for project '{projectKey}'...");
+
+        var users = await _userService.GetAssignableUsersAsync(projectKey, maxResults);
+
+        if (!users.Any())
+        {
+            Console.WriteLine($"❌ No assignable users found for project '{projectKey}'.");
+            return;
+        }
+
+        Console.WriteLine($"\n✅ Found {users.Count} assignable user(s) for project '{projectKey}':");
+        Console.WriteLine("==========================================");
+
+        for (int i = 0; i < users.Count; i++)
+        {
+            var user = users[i];
+            Console.WriteLine($"{i + 1}. {user.DisplayName}");
+            Console.WriteLine($"   📧 Email: {user.EmailAddress ?? "N/A"}");
+            Console.WriteLine($"   🆔 Account ID: {user.AccountId}");
+            Console.WriteLine($"   🟢 Status: {(user.Active ? "Active" : "Inactive")}");
+            
+            if (i < users.Count - 1)
+                Console.WriteLine();
+        }
+
+        Console.WriteLine("\n💡 Tip: Copy the Account ID to use when assigning tickets!");
+    }
+
+    /// <summary>
+    /// Get assignable users for a specific issue
+    /// </summary>
+    private async Task GetAssignableUsersForIssueAsync()
+    {
+        Console.WriteLine("\n=== GET ASSIGNABLE USERS FOR ISSUE ===");
+        Console.Write("Enter issue key (e.g., PROJ-123): ");
+        var issueKey = Console.ReadLine()?.Trim().ToUpper();
+
+        if (string.IsNullOrWhiteSpace(issueKey))
+        {
+            Console.WriteLine("❌ Issue key cannot be empty.");
+            return;
+        }
+
+        Console.Write("Maximum results (default 20): ");
+        var maxResultsInput = Console.ReadLine()?.Trim();
+        var maxResults = 20;
+        if (!string.IsNullOrWhiteSpace(maxResultsInput) && int.TryParse(maxResultsInput, out var parsed))
+        {
+            maxResults = Math.Max(1, Math.Min(100, parsed)); // Limit between 1-100
+        }
+
+        Console.WriteLine($"\n🔍 Getting assignable users for issue '{issueKey}'...");
+
+        var users = await _userService.GetAssignableUsersForIssueAsync(issueKey, maxResults);
+
+        if (!users.Any())
+        {
+            Console.WriteLine($"❌ No assignable users found for issue '{issueKey}'.");
+            return;
+        }
+
+        Console.WriteLine($"\n✅ Found {users.Count} assignable user(s) for issue '{issueKey}':");
+        Console.WriteLine("==========================================");
+
+        for (int i = 0; i < users.Count; i++)
+        {
+            var user = users[i];
+            Console.WriteLine($"{i + 1}. {user.DisplayName}");
+            Console.WriteLine($"   📧 Email: {user.EmailAddress ?? "N/A"}");
+            Console.WriteLine($"   🆔 Account ID: {user.AccountId}");
+            Console.WriteLine($"   🟢 Status: {(user.Active ? "Active" : "Inactive")}");
+            
+            if (i < users.Count - 1)
+                Console.WriteLine();
+        }
+
+        Console.WriteLine("\n💡 Tip: Copy the Account ID to use when assigning tickets!");
     }
 }

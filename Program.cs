@@ -121,6 +121,11 @@ class Program
             client.Timeout = TimeSpan.FromSeconds(30);
         });
 
+        services.AddHttpClient<IJiraUserService, JiraUserService>(client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+
         // Configure Jira settings from configuration and environment variables
         services.Configure<JiraSettings>(options =>
         {
@@ -152,6 +157,7 @@ class Program
         services.AddTransient<IJiraCommentService, JiraCommentService>();
         services.AddTransient<IJiraAdvancedSearchService, JiraAdvancedSearchService>();
         services.AddTransient<IJiraReportingService, JiraReportingService>();
+        services.AddTransient<IJiraUserService, JiraUserService>();
 
         // Register main application
         services.AddTransient<ConsoleApplication>();
