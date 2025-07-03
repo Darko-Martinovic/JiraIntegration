@@ -1869,11 +1869,11 @@ public class ConsoleApplication
             Console.WriteLine($"   📝 Type: {space.Type}");
             Console.WriteLine($"   🟢 Status: {space.Status}");
 
-            if (space.Description?.Plain != null && !string.IsNullOrEmpty(space.Description.Plain))
+            if (space.Description?.Plain?.Value != null && !string.IsNullOrEmpty(space.Description.Plain.Value))
             {
-                var description = space.Description.Plain.Length > 100
-                    ? space.Description.Plain.Substring(0, 100) + "..."
-                    : space.Description.Plain;
+                var description = space.Description.Plain.Value.Length > 100
+                    ? space.Description.Plain.Value.Substring(0, 100) + "..."
+                    : space.Description.Plain.Value;
                 Console.WriteLine($"   📄 Description: {description}");
             }
 

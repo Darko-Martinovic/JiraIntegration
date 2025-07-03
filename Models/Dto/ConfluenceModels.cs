@@ -11,7 +11,19 @@ public class ConfluenceSpace
     public string Type { get; set; } = string.Empty;
     public string Status { get; set; } = string.Empty;
     public ConfluenceSpaceDescription? Description { get; set; }
-    public string Homepage { get; set; } = string.Empty;
+    public ConfluenceHomepage? Homepage { get; set; }
+    public ConfluenceLinks? Links { get; set; }
+}
+
+/// <summary>
+/// Confluence homepage information
+/// </summary>
+public class ConfluenceHomepage
+{
+    public string Id { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
     public ConfluenceLinks? Links { get; set; }
 }
 
@@ -20,7 +32,25 @@ public class ConfluenceSpace
 /// </summary>
 public class ConfluenceSpaceDescription
 {
-    public string Plain { get; set; } = string.Empty;
+    public ConfluencePlainDescription? Plain { get; set; }
+    public ConfluenceExpandableProperty? _Expandable { get; set; }
+}
+
+/// <summary>
+/// Confluence plain description content
+/// </summary>
+public class ConfluencePlainDescription
+{
+    public string Value { get; set; } = string.Empty;
+    public string Representation { get; set; } = string.Empty;
+    public List<object> EmbeddedContent { get; set; } = new();
+}
+
+/// <summary>
+/// Confluence expandable property
+/// </summary>
+public class ConfluenceExpandableProperty
+{
     public string View { get; set; } = string.Empty;
 }
 
