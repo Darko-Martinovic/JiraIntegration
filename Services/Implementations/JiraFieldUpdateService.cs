@@ -16,10 +16,9 @@ public class JiraFieldUpdateService : BaseJiraHttpService, IJiraFieldUpdateServi
     public JiraFieldUpdateService(
         HttpClient httpClient,
         IOptions<JiraSettings> settings,
-        ILogger<JiraFieldUpdateService> logger)
-        : base(httpClient, settings, logger)
-    {
-    }
+        ILogger<JiraFieldUpdateService> logger
+    )
+        : base(httpClient, settings, logger) { }
 
     /// <summary>
     /// Updates specific fields on a ticket
@@ -28,7 +27,7 @@ public class JiraFieldUpdateService : BaseJiraHttpService, IJiraFieldUpdateServi
     {
         try
         {
-            _logger.LogInformation("Updating fields for ticket: {TicketKey}", ticketKey);
+            _logger.LogDebug("Updating fields for ticket: {TicketKey}", ticketKey);
 
             if (string.IsNullOrWhiteSpace(ticketKey))
             {
@@ -40,7 +39,10 @@ public class JiraFieldUpdateService : BaseJiraHttpService, IJiraFieldUpdateServi
 
             if (success)
             {
-                _logger.LogInformation("Successfully updated fields for ticket: {TicketKey}", ticketKey);
+                _logger.LogInformation(
+                    "Successfully updated fields for ticket: {TicketKey}",
+                    ticketKey
+                );
             }
             else
             {
@@ -59,16 +61,16 @@ public class JiraFieldUpdateService : BaseJiraHttpService, IJiraFieldUpdateServi
     /// <summary>
     /// Updates multiple tickets with the same field values
     /// </summary>
-    public async Task<BulkUpdateResult> BulkUpdateFieldsAsync(List<string> ticketKeys, UpdateFieldsRequest request)
+    public async Task<BulkUpdateResult> BulkUpdateFieldsAsync(
+        List<string> ticketKeys,
+        UpdateFieldsRequest request
+    )
     {
         try
         {
             _logger.LogInformation("Bulk updating {Count} tickets", ticketKeys.Count);
 
-            var result = new BulkUpdateResult
-            {
-                TotalTickets = ticketKeys.Count
-            };
+            var result = new BulkUpdateResult { TotalTickets = ticketKeys.Count };
 
             foreach (var ticketKey in ticketKeys)
             {
@@ -95,8 +97,11 @@ public class JiraFieldUpdateService : BaseJiraHttpService, IJiraFieldUpdateServi
                 }
             }
 
-            _logger.LogInformation("Bulk update completed. Success: {Success}, Failed: {Failed}",
-                result.SuccessfulUpdates, result.FailedUpdates);
+            _logger.LogInformation(
+                "Bulk update completed. Success: {Success}, Failed: {Failed}",
+                result.SuccessfulUpdates,
+                result.FailedUpdates
+            );
 
             return result;
         }
@@ -114,18 +119,27 @@ public class JiraFieldUpdateService : BaseJiraHttpService, IJiraFieldUpdateServi
     {
         try
         {
-            _logger.LogInformation("Getting available fields for project: {ProjectKey}", projectKey);
+            _logger.LogDebug(
+                "Getting available fields for project: {ProjectKey}",
+                projectKey
+            );
 
             if (string.IsNullOrWhiteSpace(projectKey))
             {
                 throw new ArgumentException("Project key cannot be empty", nameof(projectKey));
             }
 
-            var response = await GetAsync<List<JiraField>>($"/rest/api/3/project/{projectKey}/fields");
+            var response = await GetAsync<List<JiraField>>(
+                $"/rest/api/3/project/{projectKey}/fields"
+            );
 
             if (response != null)
             {
-                _logger.LogDebug("Found {Count} fields for project: {ProjectKey}", response.Count, projectKey);
+                _logger.LogDebug(
+                    "Found {Count} fields for project: {ProjectKey}",
+                    response.Count,
+                    projectKey
+                );
                 return response;
             }
 
@@ -146,7 +160,7 @@ public class JiraFieldUpdateService : BaseJiraHttpService, IJiraFieldUpdateServi
     {
         try
         {
-            _logger.LogInformation("Getting field values for ticket: {TicketKey}", ticketKey);
+            _logger.LogDebug("Getting field values for ticket: {TicketKey}", ticketKey);
 
             if (string.IsNullOrWhiteSpace(ticketKey))
             {

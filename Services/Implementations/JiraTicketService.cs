@@ -16,10 +16,9 @@ public class JiraTicketService : BaseJiraHttpService, IJiraTicketService
     public JiraTicketService(
         HttpClient httpClient,
         IOptions<JiraSettings> settings,
-        ILogger<JiraTicketService> logger)
-        : base(httpClient, settings, logger)
-    {
-    }
+        ILogger<JiraTicketService> logger
+    )
+        : base(httpClient, settings, logger) { }
 
     /// <summary>
     /// Creates a new ticket in Jira
@@ -28,8 +27,11 @@ public class JiraTicketService : BaseJiraHttpService, IJiraTicketService
     {
         try
         {
-            _logger.LogInformation("Creating new ticket: {Summary} in project {ProjectKey}",
-                request.Summary, request.ProjectKey);
+            _logger.LogDebug(
+                "Creating new ticket: {Summary} in project {ProjectKey}",
+                request.Summary,
+                request.ProjectKey
+            );
 
             var payload = request.ToJiraFormat();
             var result = await PostAsync<JiraIssue>("/rest/api/3/issue", payload);
@@ -59,7 +61,7 @@ public class JiraTicketService : BaseJiraHttpService, IJiraTicketService
     {
         try
         {
-            _logger.LogInformation("Getting ticket: {TicketKey}", ticketKey);
+            _logger.LogDebug("Getting ticket: {TicketKey}", ticketKey);
 
             if (string.IsNullOrWhiteSpace(ticketKey))
             {
@@ -70,8 +72,11 @@ public class JiraTicketService : BaseJiraHttpService, IJiraTicketService
 
             if (ticket != null)
             {
-                _logger.LogDebug("Successfully retrieved ticket: {Key} - {Summary}",
-                    ticket.Key, ticket.Fields.Summary);
+                _logger.LogDebug(
+                    "Successfully retrieved ticket: {Key} - {Summary}",
+                    ticket.Key,
+                    ticket.Fields.Summary
+                );
             }
             else
             {
@@ -94,7 +99,7 @@ public class JiraTicketService : BaseJiraHttpService, IJiraTicketService
     {
         try
         {
-            _logger.LogInformation("Updating ticket: {TicketKey}", ticketKey);
+            _logger.LogDebug("Updating ticket: {TicketKey}", ticketKey);
 
             if (string.IsNullOrWhiteSpace(ticketKey))
             {
@@ -129,19 +134,27 @@ public class JiraTicketService : BaseJiraHttpService, IJiraTicketService
     {
         try
         {
-            _logger.LogInformation("Getting available transitions for ticket: {TicketKey}", ticketKey);
+            _logger.LogInformation(
+                "Getting available transitions for ticket: {TicketKey}",
+                ticketKey
+            );
 
             if (string.IsNullOrWhiteSpace(ticketKey))
             {
                 throw new ArgumentException("Ticket key cannot be empty", nameof(ticketKey));
             }
 
-            var response = await GetAsync<JiraTransitionsResponse>($"/rest/api/3/issue/{ticketKey}/transitions");
+            var response = await GetAsync<JiraTransitionsResponse>(
+                $"/rest/api/3/issue/{ticketKey}/transitions"
+            );
 
             if (response?.Transitions != null)
             {
-                _logger.LogDebug("Found {Count} transitions for ticket: {TicketKey}",
-                    response.Transitions.Count, ticketKey);
+                _logger.LogDebug(
+                    "Found {Count} transitions for ticket: {TicketKey}",
+                    response.Transitions.Count,
+                    ticketKey
+                );
                 return response.Transitions;
             }
 
@@ -158,12 +171,19 @@ public class JiraTicketService : BaseJiraHttpService, IJiraTicketService
     /// <summary>
     /// Transitions a ticket to a new status
     /// </summary>
-    public async Task<bool> TransitionTicketAsync(string ticketKey, string transitionId, string? comment = null)
+    public async Task<bool> TransitionTicketAsync(
+        string ticketKey,
+        string transitionId,
+        string? comment = null
+    )
     {
         try
         {
-            _logger.LogInformation("Transitioning ticket {TicketKey} with transition {TransitionId}",
-                ticketKey, transitionId);
+            _logger.LogInformation(
+                "Transitioning ticket {TicketKey} with transition {TransitionId}",
+                ticketKey,
+                transitionId
+            );
 
             if (string.IsNullOrWhiteSpace(ticketKey))
             {
@@ -182,17 +202,31 @@ public class JiraTicketService : BaseJiraHttpService, IJiraTicketService
             };
 
             var payload = request.ToJiraFormat();
-            _logger.LogDebug("About to call PostAsyncNoResponse for ticket: {TicketKey}", ticketKey);
+            _logger.LogDebug(
+                "About to call PostAsyncNoResponse for ticket: {TicketKey}",
+                ticketKey
+            );
 
             bool success;
             try
             {
-                success = await PostAsyncNoResponse($"/rest/api/3/issue/{ticketKey}/transitions", payload);
-                _logger.LogDebug("PostAsyncNoResponse completed successfully and returned: {Success} for ticket: {TicketKey}", success, ticketKey);
+                success = await PostAsyncNoResponse(
+                    $"/rest/api/3/issue/{ticketKey}/transitions",
+                    payload
+                );
+                _logger.LogDebug(
+                    "PostAsyncNoResponse completed successfully and returned: {Success} for ticket: {TicketKey}",
+                    success,
+                    ticketKey
+                );
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception thrown by PostAsyncNoResponse for ticket: {TicketKey}", ticketKey);
+                _logger.LogError(
+                    ex,
+                    "Exception thrown by PostAsyncNoResponse for ticket: {TicketKey}",
+                    ticketKey
+                );
                 throw;
             }
 

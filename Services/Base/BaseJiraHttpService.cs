@@ -149,12 +149,12 @@ public class BaseJiraHttpService
             var response = await _httpClient.PostAsync(endpoint, content);
             responseContent = await response.Content.ReadAsStringAsync();
 
-            _logger.LogInformation("POST response for {Endpoint}: Status={StatusCode}, IsSuccess={IsSuccess}",
+            _logger.LogDebug("POST response for {Endpoint}: Status={StatusCode}, IsSuccess={IsSuccess}",
                 endpoint, response.StatusCode, response.IsSuccessStatusCode);
 
             if (response.IsSuccessStatusCode)
             {
-                _logger.LogInformation("POST request successful for: {Endpoint}, Status: {StatusCode}", endpoint, response.StatusCode);
+                _logger.LogDebug("POST request successful for: {Endpoint}, Status: {StatusCode}", endpoint, response.StatusCode);
                 return true;
             }
 

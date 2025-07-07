@@ -82,7 +82,7 @@ public class JiraAdvancedSearchService : BaseJiraHttpService, IJiraAdvancedSearc
         try
         {
             var startTime = DateTime.UtcNow;
-            _logger.LogInformation("Executing advanced search with JQL: {JQL}", request.JqlQuery);
+            _logger.LogDebug("Executing advanced search with JQL: {JQL}", request.JqlQuery);
 
             var queryParams = new List<string>
             {
@@ -132,7 +132,7 @@ public class JiraAdvancedSearchService : BaseJiraHttpService, IJiraAdvancedSearc
     {
         try
         {
-            _logger.LogInformation("Saving search: {Name}", request.Name);
+            _logger.LogDebug("Saving search: {Name}", request.Name);
 
             var savedSearch = new SavedSearch
             {
@@ -163,7 +163,7 @@ public class JiraAdvancedSearchService : BaseJiraHttpService, IJiraAdvancedSearc
     {
         try
         {
-            _logger.LogInformation("Getting saved searches");
+            _logger.LogDebug("Getting saved searches");
             await Task.Delay(1); // Simulate async operation
             return _savedSearches.ToList();
         }
@@ -181,7 +181,7 @@ public class JiraAdvancedSearchService : BaseJiraHttpService, IJiraAdvancedSearc
     {
         try
         {
-            _logger.LogInformation("Executing saved search: {SearchId}", searchId);
+            _logger.LogDebug("Executing saved search: {SearchId}", searchId);
 
             var savedSearch = _savedSearches.FirstOrDefault(s => s.Id == searchId);
             if (savedSearch == null)

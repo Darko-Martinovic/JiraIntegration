@@ -17,10 +17,9 @@ public class ConfluenceService : BaseJiraHttpService, IConfluenceService
     public ConfluenceService(
         HttpClient httpClient,
         IOptions<JiraSettings> jiraSettings,
-        ILogger<ConfluenceService> logger)
-        : base(httpClient, jiraSettings, logger)
-    {
-    }
+        ILogger<ConfluenceService> logger
+    )
+        : base(httpClient, jiraSettings, logger) { }
 
     /// <summary>
     /// Gets the Confluence base URL from JIRA base URL
@@ -39,10 +38,12 @@ public class ConfluenceService : BaseJiraHttpService, IConfluenceService
     {
         try
         {
-            _logger.LogInformation("Testing Confluence connection");
+            _logger.LogDebug("Testing Confluence connection");
 
             var confluenceBaseUrl = GetConfluenceBaseUrl();
-            var response = await _httpClient.GetAsync($"{confluenceBaseUrl}/rest/api/space?limit=1");
+            var response = await _httpClient.GetAsync(
+                $"{confluenceBaseUrl}/rest/api/space?limit=1"
+            );
 
             if (response.IsSuccessStatusCode)
             {
@@ -50,7 +51,10 @@ public class ConfluenceService : BaseJiraHttpService, IConfluenceService
                 return true;
             }
 
-            _logger.LogWarning("Confluence connection test failed with status: {StatusCode}", response.StatusCode);
+            _logger.LogWarning(
+                "Confluence connection test failed with status: {StatusCode}",
+                response.StatusCode
+            );
             return false;
         }
         catch (Exception ex)
@@ -67,14 +71,19 @@ public class ConfluenceService : BaseJiraHttpService, IConfluenceService
     {
         try
         {
-            _logger.LogInformation("Fetching Confluence spaces");
+            _logger.LogDebug("Fetching Confluence spaces");
 
             var confluenceBaseUrl = GetConfluenceBaseUrl();
-            var spaceResponse = await GetAsync<ConfluenceSpaceListResponse>($"{confluenceBaseUrl}/rest/api/space?limit=50&expand=description.plain,homepage");
+            var spaceResponse = await GetAsync<ConfluenceSpaceListResponse>(
+                $"{confluenceBaseUrl}/rest/api/space?limit=50&expand=description.plain,homepage"
+            );
 
             if (spaceResponse != null)
             {
-                _logger.LogInformation("Retrieved {Count} Confluence spaces", spaceResponse.Results.Count);
+                _logger.LogInformation(
+                    "Retrieved {Count} Confluence spaces",
+                    spaceResponse.Results.Count
+                );
                 return spaceResponse.Results;
             }
 
@@ -91,11 +100,15 @@ public class ConfluenceService : BaseJiraHttpService, IConfluenceService
     /// <summary>
     /// Searches for pages across all spaces
     /// </summary>
-    public async Task<ConfluenceSearchResults> SearchPagesAsync(string query, string? spaceKey = null, int limit = 25)
+    public async Task<ConfluenceSearchResults> SearchPagesAsync(
+        string query,
+        string? spaceKey = null,
+        int limit = 25
+    )
     {
         try
         {
-            _logger.LogInformation("Searching Confluence pages with query: {Query}", query);
+            _logger.LogDebug("Searching Confluence pages with query: {Query}", query);
 
             var confluenceBaseUrl = GetConfluenceBaseUrl();
             var searchQuery = Uri.EscapeDataString(query);
@@ -112,7 +125,10 @@ public class ConfluenceService : BaseJiraHttpService, IConfluenceService
 
             if (searchResponse != null)
             {
-                _logger.LogInformation("Found {Count} pages matching query", searchResponse.Results.Count);
+                _logger.LogInformation(
+                    "Found {Count} pages matching query",
+                    searchResponse.Results.Count
+                );
                 return searchResponse;
             }
 
@@ -133,10 +149,12 @@ public class ConfluenceService : BaseJiraHttpService, IConfluenceService
     {
         try
         {
-            _logger.LogInformation("Fetching Confluence page: {PageId}", pageId);
+            _logger.LogDebug("Fetching Confluence page: {PageId}", pageId);
 
             var confluenceBaseUrl = GetConfluenceBaseUrl();
-            var page = await GetAsync<ConfluencePage>($"{confluenceBaseUrl}/rest/api/content/{pageId}?expand=space,body.storage,body.view,version,metadata");
+            var page = await GetAsync<ConfluencePage>(
+                $"{confluenceBaseUrl}/rest/api/content/{pageId}?expand=space,body.storage,body.view,version,metadata"
+            );
 
             if (page != null)
             {
@@ -157,11 +175,20 @@ public class ConfluenceService : BaseJiraHttpService, IConfluenceService
     /// <summary>
     /// Creates a new page in a space
     /// </summary>
-    public async Task<ConfluencePage?> CreatePageAsync(string spaceKey, string title, string content, string? parentId = null)
+    public async Task<ConfluencePage?> CreatePageAsync(
+        string spaceKey,
+        string title,
+        string content,
+        string? parentId = null
+    )
     {
         try
         {
-            _logger.LogInformation("Creating new page in space {SpaceKey}: {Title}", spaceKey, title);
+            _logger.LogInformation(
+                "Creating new page in space {SpaceKey}: {Title}",
+                spaceKey,
+                title
+            );
 
             var createRequest = new
             {
@@ -173,7 +200,10 @@ public class ConfluenceService : BaseJiraHttpService, IConfluenceService
             };
 
             var confluenceBaseUrl = GetConfluenceBaseUrl();
-            var page = await PostAsync<ConfluencePage>($"{confluenceBaseUrl}/rest/api/content", createRequest);
+            var page = await PostAsync<ConfluencePage>(
+                $"{confluenceBaseUrl}/rest/api/content",
+                createRequest
+            );
 
             if (page != null)
             {
@@ -198,10 +228,12 @@ public class ConfluenceService : BaseJiraHttpService, IConfluenceService
     {
         try
         {
-            _logger.LogInformation("Fetching pages in space: {SpaceKey}", spaceKey);
+            _logger.LogDebug("Fetching pages in space: {SpaceKey}", spaceKey);
 
             var confluenceBaseUrl = GetConfluenceBaseUrl();
-            var searchResults = await GetAsync<ConfluenceSearchResults>($"{confluenceBaseUrl}/rest/api/content?spaceKey={spaceKey}&limit={limit}&expand=space,version");
+            var searchResults = await GetAsync<ConfluenceSearchResults>(
+                $"{confluenceBaseUrl}/rest/api/content?spaceKey={spaceKey}&limit={limit}&expand=space,version"
+            );
 
             if (searchResults?.Results != null)
             {
@@ -210,11 +242,18 @@ public class ConfluenceService : BaseJiraHttpService, IConfluenceService
                     .Select(r => r.Content!)
                     .ToList();
 
-                _logger.LogInformation("Retrieved {Count} pages from space {SpaceKey}", pages.Count, spaceKey);
+                _logger.LogInformation(
+                    "Retrieved {Count} pages from space {SpaceKey}",
+                    pages.Count,
+                    spaceKey
+                );
                 return pages;
             }
 
-            _logger.LogWarning("Failed to get pages from space {SpaceKey} - received null response", spaceKey);
+            _logger.LogWarning(
+                "Failed to get pages from space {SpaceKey} - received null response",
+                spaceKey
+            );
             return new List<ConfluencePage>();
         }
         catch (Exception ex)

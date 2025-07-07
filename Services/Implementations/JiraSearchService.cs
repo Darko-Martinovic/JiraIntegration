@@ -15,19 +15,22 @@ public class JiraSearchService : BaseJiraHttpService, IJiraSearchService
     public JiraSearchService(
         HttpClient httpClient,
         IOptions<JiraSettings> settings,
-        ILogger<JiraSearchService> logger)
-        : base(httpClient, settings, logger)
-    {
-    }
+        ILogger<JiraSearchService> logger
+    )
+        : base(httpClient, settings, logger) { }
 
     /// <summary>
     /// Searches for tickets using JQL (Jira Query Language)
     /// </summary>
-    public async Task<JiraSearchResponse?> SearchTicketsAsync(string jql, int maxResults = 50, int startAt = 0)
+    public async Task<JiraSearchResponse?> SearchTicketsAsync(
+        string jql,
+        int maxResults = 50,
+        int startAt = 0
+    )
     {
         try
         {
-            _logger.LogInformation("Searching tickets with JQL: {JQL}", jql);
+            _logger.LogDebug("Searching tickets with JQL: {JQL}", jql);
 
             if (string.IsNullOrWhiteSpace(jql))
             {
@@ -35,14 +38,18 @@ public class JiraSearchService : BaseJiraHttpService, IJiraSearchService
             }
 
             var encodedJql = Uri.EscapeDataString(jql);
-            var endpoint = $"/rest/api/3/search?jql={encodedJql}&maxResults={maxResults}&startAt={startAt}";
+            var endpoint =
+                $"/rest/api/3/search?jql={encodedJql}&maxResults={maxResults}&startAt={startAt}";
 
             var response = await GetAsync<JiraSearchResponse>(endpoint);
 
             if (response != null)
             {
-                _logger.LogDebug("Search completed. Found {Total} total tickets, returning {Count} tickets",
-                    response.Total, response.Issues.Count);
+                _logger.LogDebug(
+                    "Search completed. Found {Total} total tickets, returning {Count} tickets",
+                    response.Total,
+                    response.Issues.Count
+                );
             }
             else
             {
@@ -61,11 +68,14 @@ public class JiraSearchService : BaseJiraHttpService, IJiraSearchService
     /// <summary>
     /// Gets tickets for a specific project
     /// </summary>
-    public async Task<List<JiraIssue>> GetProjectTicketsAsync(string projectKey, int maxResults = 50)
+    public async Task<List<JiraIssue>> GetProjectTicketsAsync(
+        string projectKey,
+        int maxResults = 50
+    )
     {
         try
         {
-            _logger.LogInformation("Getting tickets for project: {ProjectKey}", projectKey);
+            _logger.LogDebug("Getting tickets for project: {ProjectKey}", projectKey);
 
             if (string.IsNullOrWhiteSpace(projectKey))
             {
@@ -91,7 +101,7 @@ public class JiraSearchService : BaseJiraHttpService, IJiraSearchService
     {
         try
         {
-            _logger.LogInformation("Getting tickets assigned to current user");
+            _logger.LogDebug("Getting tickets assigned to current user");
 
             var jql = "assignee = currentUser() ORDER BY updated DESC";
             var response = await SearchTicketsAsync(jql, maxResults);
@@ -112,7 +122,7 @@ public class JiraSearchService : BaseJiraHttpService, IJiraSearchService
     {
         try
         {
-            _logger.LogInformation("Getting open tickets for project: {ProjectKey}", projectKey);
+            _logger.LogDebug("Getting open tickets for project: {ProjectKey}", projectKey);
 
             if (string.IsNullOrWhiteSpace(projectKey))
             {
@@ -126,7 +136,11 @@ public class JiraSearchService : BaseJiraHttpService, IJiraSearchService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting open tickets for project: {ProjectKey}", projectKey);
+            _logger.LogError(
+                ex,
+                "Error getting open tickets for project: {ProjectKey}",
+                projectKey
+            );
             throw;
         }
     }

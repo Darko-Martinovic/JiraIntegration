@@ -15,10 +15,9 @@ public class JiraAuthService : BaseJiraHttpService, IJiraAuthService
     public JiraAuthService(
         HttpClient httpClient,
         IOptions<JiraSettings> settings,
-        ILogger<JiraAuthService> logger)
-        : base(httpClient, settings, logger)
-    {
-    }
+        ILogger<JiraAuthService> logger
+    )
+        : base(httpClient, settings, logger) { }
 
     /// <summary>
     /// Validates the connection to Jira and authentication credentials
@@ -40,7 +39,10 @@ public class JiraAuthService : BaseJiraHttpService, IJiraAuthService
 
             if (isValid)
             {
-                _logger.LogInformation("Connection validation successful for user: {DisplayName}", user!.DisplayName);
+                _logger.LogInformation(
+                    "Connection validation successful for user: {DisplayName}",
+                    user!.DisplayName
+                );
             }
             else
             {
@@ -68,8 +70,11 @@ public class JiraAuthService : BaseJiraHttpService, IJiraAuthService
 
             if (user != null)
             {
-                _logger.LogDebug("Successfully retrieved user: {DisplayName} ({Email})",
-                    user.DisplayName, user.EmailAddress);
+                _logger.LogDebug(
+                    "Successfully retrieved user: {DisplayName} ({Email})",
+                    user.DisplayName,
+                    user.EmailAddress
+                );
             }
 
             return user;

@@ -16,10 +16,9 @@ public class JiraCommentService : BaseJiraHttpService, IJiraCommentService
     public JiraCommentService(
         HttpClient httpClient,
         IOptions<JiraSettings> settings,
-        ILogger<JiraCommentService> logger)
-        : base(httpClient, settings, logger)
-    {
-    }
+        ILogger<JiraCommentService> logger
+    )
+        : base(httpClient, settings, logger) { }
 
     /// <summary>
     /// Adds a comment to a ticket
@@ -28,7 +27,7 @@ public class JiraCommentService : BaseJiraHttpService, IJiraCommentService
     {
         try
         {
-            _logger.LogInformation("Adding comment to ticket: {TicketKey}", ticketKey);
+            _logger.LogDebug("Adding comment to ticket: {TicketKey}", ticketKey);
 
             if (string.IsNullOrWhiteSpace(ticketKey))
             {
@@ -38,11 +37,17 @@ public class JiraCommentService : BaseJiraHttpService, IJiraCommentService
             var payload = request.ToJiraFormat();
 
             // Use PostAsyncNoResponse since we don't need the complex response structure for adding comments
-            var success = await PostAsyncNoResponse($"/rest/api/3/issue/{ticketKey}/comment", payload);
+            var success = await PostAsyncNoResponse(
+                $"/rest/api/3/issue/{ticketKey}/comment",
+                payload
+            );
 
             if (success)
             {
-                _logger.LogInformation("Successfully added comment to ticket: {TicketKey}", ticketKey);
+                _logger.LogInformation(
+                    "Successfully added comment to ticket: {TicketKey}",
+                    ticketKey
+                );
                 // Return a basic comment object to indicate success
                 return new JiraComment
                 {
@@ -72,7 +77,7 @@ public class JiraCommentService : BaseJiraHttpService, IJiraCommentService
     {
         try
         {
-            _logger.LogInformation("Getting comments for ticket: {TicketKey}", ticketKey);
+            _logger.LogDebug("Getting comments for ticket: {TicketKey}", ticketKey);
 
             if (string.IsNullOrWhiteSpace(ticketKey))
             {
@@ -86,21 +91,27 @@ public class JiraCommentService : BaseJiraHttpService, IJiraCommentService
                 var comments = new List<JiraComment>();
                 foreach (var comment in response.comments)
                 {
-                    comments.Add(new JiraComment
-                    {
-                        Id = comment.id,
-                        Body = comment.body?.ToString() ?? string.Empty,
-                        Author = new JiraUser
+                    comments.Add(
+                        new JiraComment
                         {
-                            DisplayName = comment.author?.displayName ?? "Unknown",
-                            EmailAddress = comment.author?.emailAddress ?? string.Empty
-                        },
-                        Created = comment.created ?? DateTime.MinValue,
-                        Updated = comment.updated ?? DateTime.MinValue
-                    });
+                            Id = comment.id,
+                            Body = comment.body?.ToString() ?? string.Empty,
+                            Author = new JiraUser
+                            {
+                                DisplayName = comment.author?.displayName ?? "Unknown",
+                                EmailAddress = comment.author?.emailAddress ?? string.Empty
+                            },
+                            Created = comment.created ?? DateTime.MinValue,
+                            Updated = comment.updated ?? DateTime.MinValue
+                        }
+                    );
                 }
 
-                _logger.LogDebug("Found {Count} comments for ticket: {TicketKey}", comments.Count, ticketKey);
+                _logger.LogDebug(
+                    "Found {Count} comments for ticket: {TicketKey}",
+                    comments.Count,
+                    ticketKey
+                );
                 return comments;
             }
 
@@ -121,7 +132,11 @@ public class JiraCommentService : BaseJiraHttpService, IJiraCommentService
     {
         try
         {
-            _logger.LogInformation("Updating comment {CommentId} for ticket: {TicketKey}", commentId, ticketKey);
+            _logger.LogDebug(
+                "Updating comment {CommentId} for ticket: {TicketKey}",
+                commentId,
+                ticketKey
+            );
 
             if (string.IsNullOrWhiteSpace(ticketKey))
             {
@@ -144,35 +159,44 @@ public class JiraCommentService : BaseJiraHttpService, IJiraCommentService
                         new
                         {
                             type = "paragraph",
-                            content = new[]
-                            {
-                                new
-                                {
-                                    type = "text",
-                                    text = newText
-                                }
-                            }
+                            content = new[] { new { type = "text", text = newText } }
                         }
                     }
                 }
             };
 
-            var success = await PutAsync($"/rest/api/3/issue/{ticketKey}/comment/{commentId}", payload);
+            var success = await PutAsync(
+                $"/rest/api/3/issue/{ticketKey}/comment/{commentId}",
+                payload
+            );
 
             if (success)
             {
-                _logger.LogInformation("Successfully updated comment {CommentId} for ticket: {TicketKey}", commentId, ticketKey);
+                _logger.LogInformation(
+                    "Successfully updated comment {CommentId} for ticket: {TicketKey}",
+                    commentId,
+                    ticketKey
+                );
             }
             else
             {
-                _logger.LogWarning("Failed to update comment {CommentId} for ticket: {TicketKey}", commentId, ticketKey);
+                _logger.LogWarning(
+                    "Failed to update comment {CommentId} for ticket: {TicketKey}",
+                    commentId,
+                    ticketKey
+                );
             }
 
             return success;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating comment {CommentId} for ticket: {TicketKey}", commentId, ticketKey);
+            _logger.LogError(
+                ex,
+                "Error updating comment {CommentId} for ticket: {TicketKey}",
+                commentId,
+                ticketKey
+            );
             throw;
         }
     }
@@ -184,7 +208,11 @@ public class JiraCommentService : BaseJiraHttpService, IJiraCommentService
     {
         try
         {
-            _logger.LogInformation("Deleting comment {CommentId} for ticket: {TicketKey}", commentId, ticketKey);
+            _logger.LogDebug(
+                "Deleting comment {CommentId} for ticket: {TicketKey}",
+                commentId,
+                ticketKey
+            );
 
             if (string.IsNullOrWhiteSpace(ticketKey))
             {
@@ -196,23 +224,38 @@ public class JiraCommentService : BaseJiraHttpService, IJiraCommentService
                 throw new ArgumentException("Comment ID cannot be empty", nameof(commentId));
             }
 
-            var response = await _httpClient.DeleteAsync($"/rest/api/3/issue/{ticketKey}/comment/{commentId}");
+            var response = await _httpClient.DeleteAsync(
+                $"/rest/api/3/issue/{ticketKey}/comment/{commentId}"
+            );
             var success = response.IsSuccessStatusCode;
 
             if (success)
             {
-                _logger.LogInformation("Successfully deleted comment {CommentId} for ticket: {TicketKey}", commentId, ticketKey);
+                _logger.LogInformation(
+                    "Successfully deleted comment {CommentId} for ticket: {TicketKey}",
+                    commentId,
+                    ticketKey
+                );
             }
             else
             {
-                _logger.LogWarning("Failed to delete comment {CommentId} for ticket: {TicketKey}", commentId, ticketKey);
+                _logger.LogWarning(
+                    "Failed to delete comment {CommentId} for ticket: {TicketKey}",
+                    commentId,
+                    ticketKey
+                );
             }
 
             return success;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting comment {CommentId} for ticket: {TicketKey}", commentId, ticketKey);
+            _logger.LogError(
+                ex,
+                "Error deleting comment {CommentId} for ticket: {TicketKey}",
+                commentId,
+                ticketKey
+            );
             throw;
         }
     }
@@ -224,14 +267,55 @@ public class JiraCommentService : BaseJiraHttpService, IJiraCommentService
     {
         return new List<CommentTemplate>
         {
-            new() { Name = "Testing Complete", Template = "✅ Testing completed successfully. All test cases passed.", Category = "QA" },
-            new() { Name = "Code Review Done", Template = "👀 Code review completed. Changes look good to merge.", Category = "Development" },
-            new() { Name = "Ready for Deployment", Template = "🚀 Feature is ready for deployment to production.", Category = "DevOps" },
-            new() { Name = "Needs More Info", Template = "ℹ️ Need additional information to proceed. Please provide more details.", Category = "General" },
-            new() { Name = "Blocked", Template = "🚫 This ticket is blocked. Waiting for dependencies to be resolved.", Category = "General" },
-            new() { Name = "In Progress", Template = "🔄 Started working on this ticket. Will update progress regularly.", Category = "General" },
-            new() { Name = "Ready for Review", Template = "👁️ Work completed. Ready for review and feedback.", Category = "General" },
-            new() { Name = "Approved", Template = "✅ Approved. Great work!", Category = "Management" }
+            new()
+            {
+                Name = "Testing Complete",
+                Template = "✅ Testing completed successfully. All test cases passed.",
+                Category = "QA"
+            },
+            new()
+            {
+                Name = "Code Review Done",
+                Template = "👀 Code review completed. Changes look good to merge.",
+                Category = "Development"
+            },
+            new()
+            {
+                Name = "Ready for Deployment",
+                Template = "🚀 Feature is ready for deployment to production.",
+                Category = "DevOps"
+            },
+            new()
+            {
+                Name = "Needs More Info",
+                Template =
+                    "ℹ️ Need additional information to proceed. Please provide more details.",
+                Category = "General"
+            },
+            new()
+            {
+                Name = "Blocked",
+                Template = "🚫 This ticket is blocked. Waiting for dependencies to be resolved.",
+                Category = "General"
+            },
+            new()
+            {
+                Name = "In Progress",
+                Template = "🔄 Started working on this ticket. Will update progress regularly.",
+                Category = "General"
+            },
+            new()
+            {
+                Name = "Ready for Review",
+                Template = "👁️ Work completed. Ready for review and feedback.",
+                Category = "General"
+            },
+            new()
+            {
+                Name = "Approved",
+                Template = "✅ Approved. Great work!",
+                Category = "Management"
+            }
         };
     }
 }

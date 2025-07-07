@@ -27,7 +27,7 @@ public class JiraProjectService : BaseJiraHttpService, IJiraProjectService
     {
         try
         {
-            _logger.LogInformation("Getting accessible projects");
+            _logger.LogDebug("Getting accessible projects");
 
             var projects = await GetAsync<List<JiraProject>>("/rest/api/3/project");
 
@@ -54,7 +54,7 @@ public class JiraProjectService : BaseJiraHttpService, IJiraProjectService
     {
         try
         {
-            _logger.LogInformation("Getting issue types for project: {ProjectKey}", projectKey);
+            _logger.LogDebug("Getting issue types for project: {ProjectKey}", projectKey);
 
             if (string.IsNullOrWhiteSpace(projectKey))
             {
@@ -95,7 +95,7 @@ public class JiraProjectService : BaseJiraHttpService, IJiraProjectService
     {
         try
         {
-            _logger.LogInformation("Getting available priorities");
+            _logger.LogDebug("Getting available priorities");
 
             var priorities = await GetAsync<List<JiraPriority>>("/rest/api/3/priority");
 
@@ -122,7 +122,7 @@ public class JiraProjectService : BaseJiraHttpService, IJiraProjectService
     {
         try
         {
-            _logger.LogInformation("Getting project: {ProjectKey}", projectKey);
+            _logger.LogDebug("Getting project: {ProjectKey}", projectKey);
 
             if (string.IsNullOrWhiteSpace(projectKey))
             {
