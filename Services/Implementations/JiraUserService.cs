@@ -60,7 +60,7 @@ public class JiraUserService : BaseJiraHttpService, IJiraUserService
             var url = $"user?accountId={Uri.EscapeDataString(accountId)}";
             var response = await GetAsync<JiraUser>(url);
 
-            _logger.LogInformation("Retrieved user details for account ID: {AccountId}", accountId);
+            _logger.LogDebug("Retrieved user details for account ID: {AccountId}", accountId);
             return response;
         }
         catch (Exception ex)

@@ -134,7 +134,7 @@ public class JiraTicketService : BaseJiraHttpService, IJiraTicketService
     {
         try
         {
-            _logger.LogInformation(
+            _logger.LogDebug(
                 "Getting available transitions for ticket: {TicketKey}",
                 ticketKey
             );

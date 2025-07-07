@@ -158,7 +158,7 @@ public class ConfluenceService : BaseJiraHttpService, IConfluenceService
 
             if (page != null)
             {
-                _logger.LogInformation("Retrieved page: {Title}", page.Title);
+                _logger.LogDebug("Retrieved page: {Title}", page.Title);
                 return page;
             }
 

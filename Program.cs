@@ -77,7 +77,7 @@ class Program
         services.AddLogging(builder =>
         {
             builder.AddConsole();
-            builder.SetMinimumLevel(LogLevel.Information);
+            builder.AddConfiguration(configuration.GetSection("Logging"));
         });
 
         // Configure HTTP client with proper timeout and connection management
