@@ -1,171 +1,76 @@
-﻿using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
-using JiraIntegration.Application;
-using JiraIntegration.Configuration;
+﻿using JiraIntegration.Configuration;
 using JiraIntegration.Models;
-using JiraIntegration.Services.Interfaces;
+using JiraIntegration.Services.Base;
 using JiraIntegration.Services.Implementations;
+using JiraIntegration.Services.Interfaces;
 
-namespace JiraIntegration;
+var builder = WebApplication.CreateBuilder(args);
 
-/// <summary>
-/// Main program entry point for Jira Integration Console Application
-/// </summary>
-class Program
+// Add services to the container
+builder.Services.AddControllers();
+builder.Services.AddOpenApi();
+
+// Add CORS policy for frontend
+builder.Services.AddCors(options =>
 {
-    /// <summary>
-    /// Application entry point
-    /// </summary>
-    static async Task Main(string[] args)
+    options.AddPolicy("AllowFrontend", policy =>
     {
-        try
-        {
-            // Load environment variables from .env file
-            EnvironmentLoader.LoadFromFile();
+        policy.WithOrigins("http://localhost:5173", "http://localhost:3000")
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
 
-            // Validate environment configuration
-            if (!EnvironmentLoader.ValidateEnvironment())
-            {
-                Console.WriteLine("\nPress any key to exit...");
-                Console.ReadKey();
-                Environment.Exit(1);
-                return;
-            }
+// Load environment variables from .env file
+DotNetEnv.Env.Load(".env");
 
-            // Build configuration from multiple sources
-            var configuration = BuildConfiguration();
+// Configure Jira settings
+builder.Services.Configure<JiraSettings>(options =>
+{
+    options.BaseUrl = Environment.GetEnvironmentVariable("JIRA_BASE_URL") ?? "";
+    options.Email = Environment.GetEnvironmentVariable("JIRA_USER_EMAIL") ?? "";
+    options.ApiToken = Environment.GetEnvironmentVariable("JIRA_API_TOKEN") ?? "";
+    options.ProjectKey = Environment.GetEnvironmentVariable("JIRA_PROJECT_KEY") ?? "";
+});
 
-            // Setup dependency injection container
-            var services = new ServiceCollection();
-            ConfigureServices(services, configuration);
-
-            // Build service provider and run application
-            using var serviceProvider = services.BuildServiceProvider();
-            var app = serviceProvider.GetRequiredService<ConsoleApplication>();
-
-            await app.RunAsync();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"❌ Fatal error: {ex.Message}");
-            Console.WriteLine("Press any key to exit...");
-            Console.ReadKey();
-            Environment.Exit(1);
-        }
-    }
-
-    /// <summary>
-    /// Builds configuration from appsettings.json and environment variables
-    /// </summary>
-    private static IConfiguration BuildConfiguration()
+// Configure HTTP client
+builder.Services.AddHttpClient<BaseJiraHttpService>(client =>
+{
+    var baseUrl = Environment.GetEnvironmentVariable("JIRA_BASE_URL");
+    if (!string.IsNullOrEmpty(baseUrl))
     {
-        return new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .AddEnvironmentVariables()
-            .Build();
+        client.BaseAddress = new Uri(baseUrl);
     }
+    client.Timeout = TimeSpan.FromMinutes(2);
+    client.DefaultRequestHeaders.Accept.Clear();
+    client.DefaultRequestHeaders.Accept.Add(
+        new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+});
 
-    /// <summary>
-    /// Configures all services for dependency injection
-    /// </summary>
-    private static void ConfigureServices(IServiceCollection services, IConfiguration configuration)
-    {
-        // Configure logging
-        services.AddLogging(builder =>
-        {
-            builder.AddConsole();
-            builder.AddConfiguration(configuration.GetSection("Logging"));
-        });
+// Register Jira services
+builder.Services.AddScoped<IJiraAuthService, JiraAuthService>();
+builder.Services.AddScoped<IJiraTicketService, JiraTicketService>();
+builder.Services.AddScoped<IJiraSearchService, JiraSearchService>();
+builder.Services.AddScoped<IJiraProjectService, JiraProjectService>();
+builder.Services.AddScoped<IJiraFieldUpdateService, JiraFieldUpdateService>();
+builder.Services.AddScoped<IJiraCommentService, JiraCommentService>();
+builder.Services.AddScoped<IJiraAdvancedSearchService, JiraAdvancedSearchService>();
+builder.Services.AddScoped<IJiraReportingService, JiraReportingService>();
+builder.Services.AddScoped<IJiraUserService, JiraUserService>();
+builder.Services.AddScoped<IConfluenceService, ConfluenceService>();
 
-        // Configure HTTP client with proper timeout and connection management
-        services.AddHttpClient<IJiraAuthService, JiraAuthService>(client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(30);
-        });
+var app = builder.Build();
 
-        services.AddHttpClient<IJiraTicketService, JiraTicketService>(client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(30);
-        });
-
-        services.AddHttpClient<IJiraSearchService, JiraSearchService>(client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(30);
-        });
-
-        services.AddHttpClient<IJiraProjectService, JiraProjectService>(client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(30);
-        });
-
-        services.AddHttpClient<IJiraFieldUpdateService, JiraFieldUpdateService>(client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(30);
-        });
-
-        services.AddHttpClient<IJiraCommentService, JiraCommentService>(client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(30);
-        });
-
-        services.AddHttpClient<IJiraAdvancedSearchService, JiraAdvancedSearchService>(client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(30);
-        });
-
-        services.AddHttpClient<IJiraReportingService, JiraReportingService>(client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(30);
-        });
-
-        services.AddHttpClient<IJiraUserService, JiraUserService>(client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(30);
-        });
-
-        services.AddHttpClient<IConfluenceService, ConfluenceService>(client =>
-        {
-            client.Timeout = TimeSpan.FromSeconds(30);
-        });
-
-        // Configure Jira settings from configuration and environment variables
-        services.Configure<JiraSettings>(options =>
-        {
-            // First try to get from configuration file
-            configuration.GetSection(JiraSettings.SectionName).Bind(options);
-
-            // Override with environment variables if they exist
-            var baseUrl = Environment.GetEnvironmentVariable("JIRA_BASE_URL");
-            var email = Environment.GetEnvironmentVariable("JIRA_USER_EMAIL");
-            var apiToken = Environment.GetEnvironmentVariable("JIRA_API_TOKEN");
-            var projectKey = Environment.GetEnvironmentVariable("JIRA_PROJECT_KEY");
-
-            if (!string.IsNullOrWhiteSpace(baseUrl))
-                options.BaseUrl = baseUrl;
-            if (!string.IsNullOrWhiteSpace(email))
-                options.Email = email;
-            if (!string.IsNullOrWhiteSpace(apiToken))
-                options.ApiToken = apiToken;
-            if (!string.IsNullOrWhiteSpace(projectKey))
-                options.ProjectKey = projectKey;
-        });
-
-        // Register application services
-        services.AddTransient<IJiraAuthService, JiraAuthService>();
-        services.AddTransient<IJiraTicketService, JiraTicketService>();
-        services.AddTransient<IJiraSearchService, JiraSearchService>();
-        services.AddTransient<IJiraProjectService, JiraProjectService>();
-        services.AddTransient<IJiraFieldUpdateService, JiraFieldUpdateService>();
-        services.AddTransient<IJiraCommentService, JiraCommentService>();
-        services.AddTransient<IJiraAdvancedSearchService, JiraAdvancedSearchService>();
-        services.AddTransient<IJiraReportingService, JiraReportingService>();
-        services.AddTransient<IJiraUserService, JiraUserService>();
-        services.AddTransient<IConfluenceService, ConfluenceService>();
-
-        // Register main application
-        services.AddTransient<ConsoleApplication>();
-    }
+// Configure the HTTP request pipeline
+if (app.Environment.IsDevelopment())
+{
+    app.MapOpenApi();
 }
+
+app.UseHttpsRedirection();
+app.UseCors("AllowFrontend");
+app.UseRouting();
+app.MapControllers();
+
+app.Run();
