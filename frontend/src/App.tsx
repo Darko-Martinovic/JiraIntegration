@@ -1,58 +1,65 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { ThemeProvider, createTheme } from "@mui/material/styles";
-import Navigation from "./components/Navigation";
-import Dashboard from "./pages/Dashboard";
-import TicketList from "./pages/TicketList";
-import CreateTicket from "./pages/CreateTicket";
-import AdvancedSearch from "./pages/AdvancedSearch";
-import UserManagement from "./pages/UserManagement";
-import Reports from "./pages/Reports";
 
-// Create Material-UI theme
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: "#1976d2",
-    },
-    secondary: {
-      main: "#dc004e",
-    },
-  },
-});
+// Simple placeholder components
+const Dashboard: React.FC = () => (
+  <div className="p-8">
+    <h1 className="text-3xl font-bold text-gray-900 mb-4">Dashboard</h1>
+    <div className="bg-white rounded-lg shadow p-6">
+      <h2 className="text-xl font-semibold mb-4">JIRA Integration Dashboard</h2>
+      <p className="text-gray-600">
+        Welcome to the JIRA Integration platform built with Tailwind CSS!
+      </p>
+    </div>
+  </div>
+);
 
-// Placeholder components for other routes
-const PlaceholderPage: React.FC<{ title: string }> = ({ title }) => (
-  <div style={{ padding: "20px" }}>
-    <h2>{title}</h2>
-    <p>This page is coming soon...</p>
+const CreateTicket: React.FC = () => (
+  <div className="p-8">
+    <h1 className="text-3xl font-bold text-gray-900 mb-4">Create Ticket</h1>
+    <div className="bg-white rounded-lg shadow p-6">
+      <p className="text-gray-600">Create ticket functionality coming soon!</p>
+    </div>
   </div>
 );
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
+    <div className="min-h-screen bg-gray-100">
+      {/* Simple Navigation */}
+      <nav className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <h1 className="text-xl font-bold text-gray-900">
+                JIRA Integration
+              </h1>
+            </div>
+            <div className="flex space-x-8">
+              <a
+                href="/"
+                className="inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-600 border-b-2 border-blue-600"
+              >
+                🏠 Dashboard
+              </a>
+              <a
+                href="/create"
+                className="inline-flex items-center px-1 pt-1 text-sm font-medium text-gray-500 hover:text-gray-700"
+              >
+                ➕ Create Ticket
+              </a>
+            </div>
+          </div>
+        </div>
+      </nav>
+
       <Router>
-        <Navigation>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/tickets" element={<TicketList />} />
-            <Route path="/create-ticket" element={<CreateTicket />} />
-            <Route path="/search" element={<AdvancedSearch />} />
-            <Route path="/users" element={<UserManagement />} />
-            <Route
-              path="/bulk"
-              element={<PlaceholderPage title="Bulk Operations" />}
-            />
-            <Route path="/reports" element={<Reports />} />
-            <Route
-              path="/confluence"
-              element={<PlaceholderPage title="Confluence Integration" />}
-            />
-          </Routes>
-        </Navigation>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/create" element={<CreateTicket />} />
+        </Routes>
       </Router>
-    </ThemeProvider>
+    </div>
   );
 }
 
