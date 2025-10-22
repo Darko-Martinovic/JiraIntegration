@@ -221,6 +221,49 @@ public class BaseJiraHttpService
     }
 
     /// <summary>
+    /// Performs a DELETE request
+    /// </summary>
+    protected async Task<bool> DeleteAsync(string endpoint)
+    {
+        try
+        {
+            _logger.LogDebug("DELETE request to: {Endpoint}", endpoint);
+
+            var response = await _httpClient.DeleteAsync(endpoint);
+
+            if (response.IsSuccessStatusCode)
+            {
+                _logger.LogDebug("DELETE request successful: {Endpoint}", endpoint);
+                return true;
+            }
+
+            var content = await response.Content.ReadAsStringAsync();
+            _logger.LogWarning(
+                "DELETE request failed: {Endpoint} - Status: {StatusCode}, Content: {Content}",
+                endpoint,
+                response.StatusCode,
+                content
+            );
+            return false;
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "HTTP error during DELETE request to: {Endpoint}", endpoint);
+            throw new InvalidOperationException($"Failed to send DELETE request to {endpoint}", ex);
+        }
+        catch (TaskCanceledException ex)
+        {
+            _logger.LogError(ex, "Timeout during DELETE request to: {Endpoint}", endpoint);
+            throw new TimeoutException($"DELETE request to {endpoint} timed out", ex);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Unexpected error during DELETE request to: {Endpoint}", endpoint);
+            throw;
+        }
+    }
+
+    /// <summary>
     /// Tests the connection to Jira by attempting to get current user info
     /// </summary>
     protected async Task<bool> TestConnectionAsync()

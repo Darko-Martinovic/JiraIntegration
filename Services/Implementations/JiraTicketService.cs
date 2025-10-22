@@ -128,6 +128,40 @@ public class JiraTicketService : BaseJiraHttpService, IJiraTicketService
     }
 
     /// <summary>
+    /// Deletes a ticket
+    /// </summary>
+    public async Task<bool> DeleteTicketAsync(string ticketKey)
+    {
+        try
+        {
+            _logger.LogDebug("Deleting ticket: {TicketKey}", ticketKey);
+
+            if (string.IsNullOrWhiteSpace(ticketKey))
+            {
+                throw new ArgumentException("Ticket key cannot be empty", nameof(ticketKey));
+            }
+
+            var success = await DeleteAsync($"/rest/api/3/issue/{ticketKey}");
+
+            if (success)
+            {
+                _logger.LogInformation("Successfully deleted ticket: {TicketKey}", ticketKey);
+            }
+            else
+            {
+                _logger.LogWarning("Failed to delete ticket: {TicketKey}", ticketKey);
+            }
+
+            return success;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting ticket: {TicketKey}", ticketKey);
+            throw;
+        }
+    }
+
+    /// <summary>
     /// Gets available transitions for a ticket
     /// </summary>
     public async Task<List<JiraTransition>> GetAvailableTransitionsAsync(string ticketKey)

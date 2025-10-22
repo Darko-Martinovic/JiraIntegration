@@ -66,9 +66,11 @@ public class CreateIssueRequest
                     }
                 }
             },
-            ["issuetype"] = new { id = IssueTypeId },
-            ["priority"] = new { name = Priority }
+            ["issuetype"] = new { id = IssueTypeId }
         };
+
+        // Skip priority field completely to avoid configuration issues
+        // Priority can be set later via update if needed
 
         if (!string.IsNullOrWhiteSpace(AssigneeId))
         {

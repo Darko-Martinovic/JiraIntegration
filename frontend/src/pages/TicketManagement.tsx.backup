@@ -1,0 +1,932 @@
+import React, { useState, useEffect } from "react";
+import { Highlight, themes } from "prism-react-renderer";
+import { Plus, Edit, ExternalLink, RefreshCw, Code } from "lucide-react";
+
+interface Ticket {
+  key: string;
+  summary: string;
+  status: string;
+  priority: string;
+  issueType: string;
+  assignee?: string;
+  created: string;
+  updated: string;
+  jiraUrl: string;
+}
+
+interface CreateTicketForm {
+  projectKey: string;
+  issueType: string;
+  summary: string;
+  description: string;
+  priority: string;
+  assignee: string;
+}
+
+interface UpdateTicketForm {
+  summary?: string;
+  description?: string;
+  priority?: string;
+  assignee?: string;
+}
+
+const TicketManagement: React.FC = () => {
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingTicket, setEditingTicket] = useState<string | null>(null);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertType, setAlertType] = useState<"success" | "error">("success");
+  const [showCSharpCode, setShowCSharpCode] = useState(false);
+
+  const [createForm, setCreateForm] = useState<CreateTicketForm>({
+    projectKey: "KAN",
+    issueType: "Task",
+    summary: "",
+    description: "",
+    priority: "Medium",
+    assignee: "",
+  });
+
+  const [updateForm, setUpdateForm] = useState<UpdateTicketForm>({});
+
+  // Code highlighting component
+  const CodeBlock = ({ code, language }: { code: string; language: string }) => (
+    <Highlight theme={themes.vsDark} code={code} language={language}>
+      {({ className, style, tokens, getLineProps, getTokenProps }) => (
+        <pre className={`${className} text-sm rounded-lg p-4 overflow-x-auto`} style={style}>
+          {tokens.map((line, i) => (
+            <div key={i} {...getLineProps({ line })}>
+              <span className="inline-block w-8 text-gray-500 text-right mr-4 select-none">
+                {i + 1}
+              </span>
+              {line.map((token, key) => (
+                <span key={key} {...getTokenProps({ token })} />
+              ))}
+            </div>
+          ))}
+        </pre>
+      )}
+    </Highlight>
+  );
+
+  const fetchTickets = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/jira/tickets?maxResults=20"
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setTickets(data.Tickets || []);
+      } else {
+        throw new Error(`HTTP ${response.status}`);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch tickets");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchTickets();
+  }, []);
+
+  const showAlert = (
+    message: string,
+    type: "success" | "error" = "success"
+  ) => {
+    setAlertMessage(message);
+    setAlertType(type);
+    setTimeout(() => setAlertMessage(""), 5000);
+  };
+
+  const createTicket = async () => {
+    if (!createForm.summary.trim()) {
+      showAlert("Summary is required", "error");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:5000/api/jira/tickets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          projectKey: createForm.projectKey,
+          summary: createForm.summary,
+          description: createForm.description,
+          issueType: createForm.issueType,
+          priority: createForm.priority,
+          assignee: createForm.assignee || null,
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        showAlert(`✅ Ticket created successfully! Key: ${result.ticket.key}`);
+        setCreateForm({
+          projectKey: "KAN",
+          issueType: "Task",
+          summary: "",
+          description: "",
+          priority: "Medium",
+          assignee: "",
+        });
+        setShowCreateForm(false);
+        fetchTickets();
+      } else {
+        const errorData = await response.json();
+        showAlert(
+          `Error: ${errorData.message || "Failed to create ticket"}`,
+          "error"
+        );
+      }
+    } catch (error) {
+      showAlert(
+        `Error: ${error instanceof Error ? error.message : "Network error"}`,
+        "error"
+      );
+    }
+  };
+
+  const updateTicket = async (ticketKey: string) => {
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/jira/tickets/${ticketKey}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updateForm),
+        }
+      );
+
+      if (response.ok) {
+        showAlert(`✅ Ticket ${ticketKey} updated successfully!`);
+        setEditingTicket(null);
+        setUpdateForm({});
+        fetchTickets();
+      } else {
+        const errorData = await response.json();
+        showAlert(
+          `Error: ${errorData.message || "Failed to update ticket"}`,
+          "error"
+        );
+      }
+    } catch (error) {
+      showAlert(
+        `Error: ${error instanceof Error ? error.message : "Network error"}`,
+        "error"
+      );
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  return (
+    <div className="p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Page Header */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Ticket Management
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Create, update, delete, and manage JIRA tickets
+              </p>
+            </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={fetchTickets}
+                disabled={loading}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+              >
+                <RefreshCw
+                  className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`}
+                />
+                Refresh
+              </button>
+              <button
+                onClick={() => setShowCreateForm(!showCreateForm)}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Ticket
+              </button>
+              <button
+                onClick={() => setShowCSharpCode(!showCSharpCode)}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <Code className="w-4 h-4 mr-2" />
+                {showCSharpCode ? 'Hide' : 'Show'} C# Code
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Alert Messages */}
+        {alertMessage && (
+          <div
+            className={`mb-6 p-4 rounded-lg border ${
+              alertType === "success"
+                ? "bg-green-50 border-green-200 text-green-800"
+                : "bg-red-50 border-red-200 text-red-800"
+            }`}
+          >
+            {alertMessage}
+          </div>
+        )}
+
+        {/* Create Ticket Form */}
+        {showCreateForm && (
+          <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mb-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">
+              Create New Ticket
+            </h2>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Project Key *
+                  </label>
+                  <select
+                    value={createForm.projectKey}
+                    onChange={(e) =>
+                      setCreateForm({
+                        ...createForm,
+                        projectKey: e.target.value,
+                      })
+                    }
+                    className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="KAN">KAN Project</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Issue Type *
+                  </label>
+                  <select
+                    value={createForm.issueType}
+                    onChange={(e) =>
+                      setCreateForm({
+                        ...createForm,
+                        issueType: e.target.value,
+                      })
+                    }
+                    className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="Task">Task</option>
+                    <option value="Bug">Bug</option>
+                    <option value="Story">Story</option>
+                    <option value="Epic">Epic</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Summary *
+                </label>
+                <input
+                  type="text"
+                  value={createForm.summary}
+                  onChange={(e) =>
+                    setCreateForm({ ...createForm, summary: e.target.value })
+                  }
+                  className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  placeholder="Brief description of the issue"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Description
+                </label>
+                <textarea
+                  value={createForm.description}
+                  onChange={(e) =>
+                    setCreateForm({
+                      ...createForm,
+                      description: e.target.value,
+                    })
+                  }
+                  rows={4}
+                  className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  placeholder="Detailed description of the issue"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Priority
+                  </label>
+                  <select
+                    value={createForm.priority}
+                    onChange={(e) =>
+                      setCreateForm({ ...createForm, priority: e.target.value })
+                    }
+                    className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  >
+                    <option value="Highest">Highest</option>
+                    <option value="High">High</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Low">Low</option>
+                    <option value="Lowest">Lowest</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Assignee
+                  </label>
+                  <input
+                    type="text"
+                    value={createForm.assignee}
+                    onChange={(e) =>
+                      setCreateForm({ ...createForm, assignee: e.target.value })
+                    }
+                    className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Enter username or email"
+                  />
+                </div>
+              </div>
+
+              <div className="flex space-x-4 pt-4">
+                <button
+                  onClick={createTicket}
+                  disabled={!createForm.summary.trim()}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Create Ticket
+                </button>
+                <button
+                  onClick={() => setShowCreateForm(false)}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-900 font-medium py-2 px-6 rounded-lg transition-colors duration-200"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tickets List */}
+        <div className="bg-white rounded-lg shadow-md border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h2 className="text-xl font-semibold text-gray-900">
+              Project Tickets
+            </h2>
+          </div>
+
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="w-8 h-8 animate-spin text-blue-600" />
+              <span className="ml-3 text-lg text-gray-600">
+                Loading tickets...
+              </span>
+            </div>
+          ) : error ? (
+            <div className="p-6">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-red-800">{error}</p>
+              </div>
+            </div>
+          ) : tickets.length === 0 ? (
+            <div className="p-12 text-center">
+              <p className="text-gray-500 text-lg">No tickets found</p>
+              <p className="text-gray-400 text-sm mt-2">
+                Create your first ticket to get started
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Key
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Summary
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Priority
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Type
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Updated
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {tickets.map((ticket) => (
+                    <tr key={ticket.key} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <span className="text-sm font-medium text-blue-600">
+                            {ticket.key}
+                          </span>
+                          <a
+                            href={ticket.jiraUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ml-2 text-gray-400 hover:text-gray-600"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div
+                          className="text-sm text-gray-900 max-w-xs truncate"
+                          title={ticket.summary}
+                        >
+                          {ticket.summary}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                          {ticket.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            ticket.priority === "Highest" ||
+                            ticket.priority === "High"
+                              ? "bg-red-100 text-red-800"
+                              : ticket.priority === "Medium"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-green-100 text-green-800"
+                          }`}
+                        >
+                          {ticket.priority}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {ticket.issueType}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatDate(ticket.updated)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => {
+                              setEditingTicket(ticket.key);
+                              setUpdateForm({
+                                summary: ticket.summary,
+                                priority: ticket.priority,
+                                assignee: ticket.assignee || "",
+                              });
+                            }}
+                            className="text-blue-600 hover:text-blue-900"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Edit Ticket Modal */}
+        {editingTicket && (
+          <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+            <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 shadow-lg rounded-md bg-white">
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Edit Ticket: {editingTicket}
+                </h3>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Summary
+                  </label>
+                  <input
+                    type="text"
+                    value={updateForm.summary || ""}
+                    onChange={(e) =>
+                      setUpdateForm({ ...updateForm, summary: e.target.value })
+                    }
+                    className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={updateForm.description || ""}
+                    onChange={(e) =>
+                      setUpdateForm({
+                        ...updateForm,
+                        description: e.target.value,
+                      })
+                    }
+                    rows={3}
+                    className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Priority
+                    </label>
+                    <select
+                      value={updateForm.priority || ""}
+                      onChange={(e) =>
+                        setUpdateForm({
+                          ...updateForm,
+                          priority: e.target.value,
+                        })
+                      }
+                      className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    >
+                      <option value="Highest">Highest</option>
+                      <option value="High">High</option>
+                      <option value="Medium">Medium</option>
+                      <option value="Low">Low</option>
+                      <option value="Lowest">Lowest</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Assignee
+                    </label>
+                    <input
+                      type="text"
+                      value={updateForm.assignee || ""}
+                      onChange={(e) =>
+                        setUpdateForm({
+                          ...updateForm,
+                          assignee: e.target.value,
+                        })
+                      }
+                      className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="flex space-x-4 pt-6">
+                <button
+                  onClick={() => updateTicket(editingTicket)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg"
+                >
+                  Update Ticket
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingTicket(null);
+                    setUpdateForm({});
+                  }}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-900 font-medium py-2 px-4 rounded-lg"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* C# Code Examples Section */}
+        {showCSharpCode && (
+          <div className="bg-white rounded-lg shadow-md border border-gray-200 p-6 mt-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">
+              C# JIRA Integration Code Examples
+            </h2>
+            
+            <div className="space-y-6">
+              {/* Create Ticket Example */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-3">1. Create Ticket</h3>
+                <CodeBlock 
+                  language="csharp"
+                  code={`// C# - Create JIRA Ticket
+using System.Text;
+using System.Text.Json;
+
+public class JiraTicketService
+{
+    private readonly HttpClient _httpClient;
+    private readonly string _jiraBaseUrl = "https://your-domain.atlassian.net";
+    private readonly string _email = "your-email@domain.com";
+    private readonly string _apiToken = "your-api-token";
+
+    public async Task<string> CreateTicketAsync(CreateIssueRequest request)
+    {
+        // Prepare authentication header
+        var credentials = Convert.ToBase64String(
+            Encoding.ASCII.GetBytes($"{_email}:{_apiToken}")
+        );
+        _httpClient.DefaultRequestHeaders.Authorization = 
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", credentials);
+
+        // Create the request payload
+        var jiraRequest = new
+        {
+            fields = new
+            {
+                project = new { key = request.ProjectKey },
+                summary = request.Summary,
+                description = new
+                {
+                    type = "doc",
+                    version = 1,
+                    content = new[]
+                    {
+                        new
+                        {
+                            type = "paragraph",
+                            content = new[]
+                            {
+                                new { type = "text", text = request.Description }
+                            }
+                        }
+                    }
+                },
+                issuetype = new { id = request.IssueTypeId },
+                priority = new { name = request.Priority }
+            }
+        };
+
+        // Send the request
+        var json = JsonSerializer.Serialize(jiraRequest);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        
+        var response = await _httpClient.PostAsync(
+            $"{_jiraBaseUrl}/rest/api/3/issue", 
+            content
+        );
+
+        if (response.IsSuccessStatusCode)
+        {
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<JsonElement>(responseContent);
+            return result.GetProperty("key").GetString();
+        }
+        
+        throw new Exception($"Failed to create ticket: {response.StatusCode}");
+    }
+}`}
+                />
+              </div>
+                {
+                    type = "doc",
+                    version = 1,
+                    content = new[]
+                    {
+                        new
+                        {
+                            type = "paragraph",
+                            content = new[] { new { type = "text", text = request.Description } }
+                        }
+                    }
+                },
+                issuetype = new { id = "10001" }, // Task
+                priority = new { name = request.Priority }
+            }
+        };
+
+        var json = JsonSerializer.Serialize(jiraRequest);
+        var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+        var response = await _httpClient.PostAsync(
+            $"{_jiraBaseUrl}/rest/api/3/issue", 
+            content
+        );
+
+        if (response.IsSuccessStatusCode)
+        {
+            var responseContent = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<JiraCreateResponse>(responseContent);
+            return result.Key;
+        }
+        
+        throw new Exception($"Failed to create ticket: {response.StatusCode}");
+    }
+}
+
+public class CreateIssueRequest
+{
+    public string ProjectKey { get; set; }
+    public string Summary { get; set; }
+    public string Description { get; set; }
+    public string Priority { get; set; } = "Medium";
+}
+
+public class JiraCreateResponse
+{
+    public string Id { get; set; }
+    public string Key { get; set; }
+    public string Self { get; set; }
+}`}</code>
+                </pre>
+              </div>
+
+              {/* Get Tickets Example */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-3">2. Get Project Tickets</h3>
+                <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
+                  <code>{`// C# - Get Project Tickets
+public async Task<List<JiraIssue>> GetProjectTicketsAsync(string projectKey, int maxResults = 20)
+{
+    var credentials = Convert.ToBase64String(
+        Encoding.ASCII.GetBytes($"{_email}:{_apiToken}")
+    );
+    _httpClient.DefaultRequestHeaders.Authorization = 
+        new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", credentials);
+
+    // Use JQL (JIRA Query Language) to search for tickets
+    var jql = $"project = {projectKey} ORDER BY updated DESC";
+    var encodedJql = Uri.EscapeDataString(jql);
+    
+    var response = await _httpClient.GetAsync(
+        $"{_jiraBaseUrl}/rest/api/3/search?jql={encodedJql}&maxResults={maxResults}"
+    );
+
+    if (response.IsSuccessStatusCode)
+    {
+        var responseContent = await response.Content.ReadAsStringAsync();
+        var searchResult = JsonSerializer.Deserialize<JiraSearchResponse>(responseContent);
+        return searchResult.Issues;
+    }
+    
+    throw new Exception($"Failed to get tickets: {response.StatusCode}");
+}
+
+public class JiraSearchResponse
+{
+    public List<JiraIssue> Issues { get; set; } = new();
+    public int Total { get; set; }
+    public int StartAt { get; set; }
+    public int MaxResults { get; set; }
+}
+
+public class JiraIssue
+{
+    public string Id { get; set; }
+    public string Key { get; set; }
+    public string Self { get; set; }
+    public JiraIssueFields Fields { get; set; }
+}
+
+public class JiraIssueFields
+{
+    public string Summary { get; set; }
+    public JiraStatus Status { get; set; }
+    public JiraPriority Priority { get; set; }
+    public JiraIssueType IssueType { get; set; }
+    public DateTime Created { get; set; }
+    public DateTime Updated { get; set; }
+}`}</code>
+                </pre>
+              </div>
+
+              {/* Update Ticket Example */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-3">3. Update Ticket</h3>
+                <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
+                  <code>{`// C# - Update JIRA Ticket
+public async Task<bool> UpdateTicketAsync(string ticketKey, UpdateIssueRequest request)
+{
+    var credentials = Convert.ToBase64String(
+        Encoding.ASCII.GetBytes($"{_email}:{_apiToken}")
+    );
+    _httpClient.DefaultRequestHeaders.Authorization = 
+        new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", credentials);
+
+    // Build update payload
+    var updateRequest = new
+    {
+        fields = new Dictionary<string, object>()
+    };
+
+    if (!string.IsNullOrEmpty(request.Summary))
+        updateRequest.fields["summary"] = request.Summary;
+    
+    if (!string.IsNullOrEmpty(request.Description))
+        updateRequest.fields["description"] = new
+        {
+            type = "doc",
+            version = 1,
+            content = new[]
+            {
+                new
+                {
+                    type = "paragraph",
+                    content = new[] { new { type = "text", text = request.Description } }
+                }
+            }
+        };
+    
+    if (!string.IsNullOrEmpty(request.Priority))
+        updateRequest.fields["priority"] = new { name = request.Priority };
+
+    var json = JsonSerializer.Serialize(updateRequest);
+    var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+    var response = await _httpClient.PutAsync(
+        $"{_jiraBaseUrl}/rest/api/3/issue/{ticketKey}",
+        content
+    );
+
+    return response.IsSuccessStatusCode;
+}
+
+public class UpdateIssueRequest
+{
+    public string? Summary { get; set; }
+    public string? Description { get; set; }
+    public string? Priority { get; set; }
+}`}</code>
+                </pre>
+              </div>
+
+              {/* Authentication Setup */}
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-3">4. Setup & Authentication</h3>
+                <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm">
+                  <code>{`// C# - JIRA API Setup & Configuration
+public class JiraSettings
+{
+    public string BaseUrl { get; set; } = "https://your-domain.atlassian.net";
+    public string Email { get; set; } = "your-email@domain.com";
+    public string ApiToken { get; set; } = "your-api-token";
+    public string ProjectKey { get; set; } = "YOUR-PROJECT";
+}
+
+// Program.cs or Startup.cs configuration
+public void ConfigureServices(IServiceCollection services)
+{
+    // Configure JIRA settings
+    services.Configure<JiraSettings>(Configuration.GetSection("JiraSettings"));
+    
+    // Configure HTTP client
+    services.AddHttpClient<JiraTicketService>(client =>
+    {
+        client.BaseAddress = new Uri("https://your-domain.atlassian.net");
+        client.Timeout = TimeSpan.FromMinutes(2);
+        client.DefaultRequestHeaders.Accept.Clear();
+        client.DefaultRequestHeaders.Accept.Add(
+            new MediaTypeWithQualityHeaderValue("application/json"));
+    });
+    
+    services.AddScoped<JiraTicketService>();
+}
+
+// How to get API Token:
+// 1. Go to https://id.atlassian.com/manage-profile/security/api-tokens
+// 2. Click "Create API token"
+// 3. Give it a label and click "Create"
+// 4. Copy the token and store it securely
+
+// appsettings.json
+{
+  "JiraSettings": {
+    "BaseUrl": "https://your-domain.atlassian.net",
+    "Email": "your-email@domain.com",
+    "ApiToken": "your-api-token",
+    "ProjectKey": "YOUR-PROJECT"
+  }
+}`}</code>
+                </pre>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default TicketManagement;

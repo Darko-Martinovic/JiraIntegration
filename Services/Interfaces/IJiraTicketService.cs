@@ -31,6 +31,13 @@ public interface IJiraTicketService
     Task<bool> UpdateTicketAsync(string ticketKey, UpdateIssueRequest request);
 
     /// <summary>
+    /// Deletes a ticket
+    /// </summary>
+    /// <param name="ticketKey">Ticket key to delete</param>
+    /// <returns>True if deletion was successful</returns>
+    Task<bool> DeleteTicketAsync(string ticketKey);
+
+    /// <summary>
     /// Gets available transitions for a ticket
     /// </summary>
     /// <param name="ticketKey">Ticket key</param>

@@ -37,10 +37,12 @@ public class JiraSearchService : BaseJiraHttpService, IJiraSearchService
                 throw new ArgumentException("JQL query cannot be empty", nameof(jql));
             }
 
+            // Use GET request with the /rest/api/3/search/jql endpoint (required by new JIRA API)
             var encodedJql = Uri.EscapeDataString(jql);
-            var endpoint =
-                $"/rest/api/3/search?jql={encodedJql}&maxResults={maxResults}&startAt={startAt}";
+            var encodedFields = Uri.EscapeDataString(string.Join(",", new[] { "summary", "status", "priority", "issuetype", "assignee", "created", "updated", "project" }));
+            var endpoint = $"/rest/api/3/search/jql?jql={encodedJql}&maxResults={maxResults}&startAt={startAt}&fields={encodedFields}";
 
+            _logger.LogDebug("GET request endpoint: {Endpoint}", endpoint);
             var response = await GetAsync<JiraSearchResponse>(endpoint);
 
             if (response != null)
@@ -82,7 +84,10 @@ public class JiraSearchService : BaseJiraHttpService, IJiraSearchService
                 throw new ArgumentException("Project key cannot be empty", nameof(projectKey));
             }
 
-            var jql = $"project = {projectKey} ORDER BY created DESC";
+            // Add date restriction to avoid "unbounded JQL queries" error
+            // Get tickets created in the last 30 days to bound the query
+            var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30).ToString("yyyy-MM-dd");
+            var jql = $"project = {projectKey} AND created >= {thirtyDaysAgo} ORDER BY created DESC";
             var response = await SearchTicketsAsync(jql, maxResults);
 
             return response?.Issues ?? new List<JiraIssue>();
