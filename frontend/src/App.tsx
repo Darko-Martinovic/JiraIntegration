@@ -1,82 +1,41 @@
-import React from "react";
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Link,
-  useLocation,
-} from "react-router-dom";
+import { NavLink, Route, Routes } from "react-router-dom";
+import { ConfluencePage } from "./pages/ConfluencePage";
+import { ConnectionPage } from "./pages/ConnectionPage";
+import { TicketsPage } from "./pages/TicketsPage";
 
-// Import page components
-import Dashboard from "./pages/Dashboard";
-import Configuration from "./pages/Configuration";
-import TicketManagement from "./pages/TicketManagement";
+const links = [
+  { to: "/", label: "Connection" },
+  { to: "/tickets", label: "Tickets" },
+  { to: "/confluence", label: "Confluence" },
+];
 
-function Navigation() {
-  const location = useLocation();
-
-  const isActive = (path: string) => location.pathname === path;
-
-  return (
-    <nav className="bg-white shadow-sm border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <h1 className="text-xl font-bold text-gray-900">
-              JIRA Integration
-            </h1>
-          </div>
-          <div className="flex space-x-8">
-            <Link
-              to="/"
-              className={`inline-flex items-center px-1 pt-1 text-sm font-medium ${
-                isActive("/")
-                  ? "text-blue-600 border-b-2 border-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              🏠 Dashboard
-            </Link>
-            <Link
-              to="/configuration"
-              className={`inline-flex items-center px-1 pt-1 text-sm font-medium ${
-                isActive("/configuration")
-                  ? "text-blue-600 border-b-2 border-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              ⚙️ Configuration
-            </Link>
-            <Link
-              to="/tickets"
-              className={`inline-flex items-center px-1 pt-1 text-sm font-medium ${
-                isActive("/tickets")
-                  ? "text-blue-600 border-b-2 border-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              🎫 Tickets
-            </Link>
-          </div>
-        </div>
-      </div>
-    </nav>
-  );
-}
-
-function App() {
+export default function App() {
   return (
     <div className="min-h-screen bg-gray-100">
-      <Router>
-        <Navigation />
+      <nav className="border-b border-gray-200 bg-white">
+        <div className="mx-auto flex h-14 max-w-6xl items-center gap-8 px-4">
+          <span className="font-semibold text-gray-900">Jira Integration</span>
+          {links.map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              end
+              className={({ isActive }) =>
+                `text-sm font-medium ${isActive ? "text-blue-700" : "text-gray-500 hover:text-gray-800"}`
+              }
+            >
+              {link.label}
+            </NavLink>
+          ))}
+        </div>
+      </nav>
+      <main className="mx-auto max-w-6xl px-4 py-8">
         <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/configuration" element={<Configuration />} />
-          <Route path="/tickets" element={<TicketManagement />} />
+          <Route path="/" element={<ConnectionPage />} />
+          <Route path="/tickets" element={<TicketsPage />} />
+          <Route path="/confluence" element={<ConfluencePage />} />
         </Routes>
-      </Router>
+      </main>
     </div>
   );
 }
-
-export default App;
