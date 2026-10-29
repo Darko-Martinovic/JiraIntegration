@@ -1,431 +1,128 @@
-# JIRA Integration Console Application
+# Jira Integration
 
-A comprehensive .NET console application for interacting with JIRA Cloud and Confluence via REST API. This application provides **12 powerful features** for managing JIRA tickets, workflows, team productivity, and Confluence documentation.
+A small ASP.NET Core API and a React front end that show how to work with Jira Cloud and Confluence Cloud from C#. The API signs in with an Atlassian API token, searches tickets with JQL, creates, edits, moves, comments on and deletes them, lists Confluence spaces and pages, searches pages with CQL and creates new ones. Each page of the front end can show the C# service it calls, read from the source at build time.
 
-## 🔗 **API Information**
+## What it covers
 
-This application integrates with Atlassian Cloud APIs:
+| Topic | Atlassian API | Code |
+|---|---|---|
+| Signing in with email and API token, one typed `HttpClient` per service | Basic authentication | `Configuration/AtlassianServices.cs` |
+| JSON in and out, Atlassian's error answers turned into exceptions | | `Atlassian/AtlassianHttpService.cs`, `Atlassian/AtlassianApiException.cs` |
+| Errors returned to the browser as problem details | | `Atlassian/AtlassianExceptionHandler.cs` |
+| Searching tickets, page by page | `GET /rest/api/3/search/jql` with `nextPageToken` | `Services/Implementations/JiraSearchService.cs` |
+| Creating, reading, updating and deleting tickets | `/rest/api/3/issue` | `Services/Implementations/JiraTicketService.cs` |
+| Moving a ticket through its workflow, with a comment | `/rest/api/3/issue/{key}/transitions` | `Services/Implementations/JiraTicketService.cs` |
+| Comments | `/rest/api/3/issue/{key}/comment` | `Services/Implementations/JiraCommentService.cs` |
+| Issue types, priorities and assignable users | `/rest/api/3/project`, `/priority/search`, `/user/assignable/search` | `JiraProjectService.cs`, `JiraUserService.cs` |
+| Descriptions and comments in Atlassian Document Format | | `Atlassian/Adf.cs` |
+| Confluence spaces and pages | REST API v2, `/wiki/api/v2` | `Services/Implementations/ConfluenceService.cs` |
+| Confluence search | REST API v1, `/wiki/rest/api/search` with CQL | `Services/Implementations/ConfluenceService.cs`, `Atlassian/QueryText.cs` |
 
-- **JIRA REST API v3**: `https://domain.atlassian.net/rest/api/3/`
-  - [Official Documentation](https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/)
-  - Used for issue management, workflows, user management, and project operations
-- **Confluence REST API**: `https://domain.atlassian.net/wiki/rest/api/`
-  - [Official Documentation](https://developer.atlassian.com/cloud/confluence/rest/v1/intro/)
-  - ✅ **Now Available** - Full integration for documentation and knowledge base management
+All paths in the Code column are under `src/JiraIntegration/`.
 
-> **Note**: Replace `domain` with your actual Atlassian domain (e.g., `yourcompany.atlassian.net`)
+## Requirements
 
-## 🚀 Features
+- .NET 10 SDK
+- Node.js 22 or later
+- An Atlassian Cloud site with Jira. Confluence is optional; without it the Confluence page reports the error and the rest works.
+- An API token for an account on that site
 
-### **Core Features (1-5)**
+## Setup
 
-### ✅ 1. Test Connection
+1. Create an API token at <https://id.atlassian.com/manage-profile/security/api-tokens> ("Create API token", not the scoped variant: scoped tokens are called through `api.atlassian.com` with the site's cloud id, which this project doesn't do).
+2. Copy `.env.example` to `.env` in the repository root and fill it in:
 
-- Validates JIRA credentials and permissions
-- Displays authenticated user information
-- Confirms API connectivity and authentication status
+   | Setting | Value |
+   |---|---|
+   | `JIRA_BASE_URL` | The site, such as `https://your-site.atlassian.net` |
+   | `JIRA_USER_EMAIL` | The email of the account the token belongs to |
+   | `JIRA_API_TOKEN` | The token |
+   | `JIRA_PROJECT_KEY` | The project the ticket list opens on and new tickets go into |
+   | `JIRA_TIMEOUT_SECONDS` | Optional, 30 by default |
 
-### ✅ 2. Create Ticket
+   `.env` is ignored by git. The same values can come from environment variables instead.
 
-- Creates new JIRA tickets with proper validation
-- Supports multiple issue types (Task, Story, Bug, Epic)
-- Allows setting priority levels (High, Medium, Low)
-- Automatic project verification
+## Running it
 
-### ✅ 3. Get Ticket Details
-
-- Retrieves comprehensive ticket information by key
-- Displays formatted ticket details including:
-  - Summary, Description, Status, Priority
-  - Assignee, Reporter, Created/Updated dates
-  - Direct links to JIRA web interface
-
-### ✅ 4. Search Tickets (JQL)
-
-- Powerful JQL (JIRA Query Language) search functionality
-- Built-in example queries for common scenarios
-- Configurable result limits
-- Formatted search results display
-
-### ✅ 5. Transition Ticket
-
-- Move tickets through workflow stages
-- Lists available transitions for each ticket
-- Supports optional comments during transitions
-- Real-time status updates
-
-### ✅ 6. Update Ticket Fields
-
-- **Basic Fields**: Update summary, description, assignee, priority, and due date
-- **Field Validation**: Checks current values before updating
-- **Bulk Updates**: Change the same field across multiple tickets at once
-- **Real-time Updates**: Immediate field value changes
-
-### ✅ 7. Add Comments
-
-- **Standard Comments**: Add text comments with @mentions for notifications
-- **Comment Templates**: Pre-defined comments for common scenarios (testing complete, code review done)
-- **Comment Management**: View existing comments on tickets
-- **Template Library**: Ready-to-use professional comment templates
-
-### ✅ 8. Bulk Operations
-
-- **Mass Field Updates**: Update multiple tickets simultaneously (summary, assignee, priority)
-- **Bulk Transitions**: Move multiple tickets through workflow stages together (planned)
-- **CSV Import/Export**: Import ticket updates from spreadsheets and export results (planned)
-- **Progress Tracking**: Real-time feedback on bulk operation success/failure
-
-### ✅ 9. Advanced Search
-
-- **JQL Builder**: Visual interface to build complex searches without learning JQL syntax
-- **Saved Searches**: Save frequently used searches and share them with team
-- **Smart Filters**: Quick filters like "My open tickets", "Overdue items", "Recent updates"
-- **Custom JQL**: Advanced users can write custom JQL queries directly
-
-### ✅ 10. Reporting Features
-
-- **Sprint Reports**: Basic burndown charts and velocity tracking
-- **Team Dashboard**: Workload distribution and completion rates per person
-- **Executive Summary**: High-level project status with key metrics
-- **Export Reports**: Generate PDF/Excel reports for stakeholders (simplified implementation)
-
-### ✅ 11. User Management
-
-- **Search Users**: Find users by name, email, or username with detailed results
-- **Account ID Lookup**: Get user details by account ID for verification
-- **Assignable Users**: List users who can be assigned to specific projects or issues
-- **Assignment Helper**: Provides account IDs needed for ticket assignment operations
-- **Validation**: Helps ensure correct account IDs are used when updating assignees
-
-### ✅ 12. Confluence Integration
-
-- **Connection Test**: Validates Confluence API access using the same JIRA credentials
-- **List Spaces**: Browse all Confluence spaces you have access to with descriptions
-- **Search Pages**: Full-text search across all pages or within specific spaces
-- **View Page Content**: Display page details, metadata, and content preview
-- **Create Pages**: Create new pages in any space with optional parent page linking
-- **Browse Space Content**: List all pages within a specific Confluence space
-- **Seamless Integration**: Uses the same API token as JIRA for unified authentication
-
-## 🛠️ Technical Architecture
-
-### **High-Quality Code Standards**
-
-- **Dependency Injection**: Full DI container setup with Microsoft.Extensions
-- **Async/Await**: All operations are fully asynchronous
-- **Error Handling**: Comprehensive exception handling and logging
-- **Configuration Management**: Environment-based configuration with validation
-- **HTTP Client Management**: Proper HttpClient lifecycle management
-- **Logging**: Structured logging with different levels
-- **Type Safety**: Strong typing with nullable reference types enabled
-- **ADF Support**: Handles both legacy string and modern Atlassian Document Format descriptions
-
-### **Project Structure**
-
-```
-JiraIntegration/
-├── Application/
-│   └── ConsoleApplication.cs          # Main UI and menu system
-├── Configuration/
-│   └── EnvironmentLoader.cs           # Environment variable management
-├── Models/
-│   ├── JiraSettings.cs                # Configuration model
-│   ├── Dto/
-│   │   ├── JiraModels.cs              # JIRA API response models
-│   │   └── ConfluenceModels.cs        # Confluence API response models
-│   └── Requests/
-│       └── JiraRequests.cs            # JIRA API request models
-├── Services/
-│   ├── Base/
-│   │   └── BaseJiraHttpService.cs     # Base HTTP service with auth
-│   ├── Interfaces/
-│   │   ├── IJiraAuthService.cs
-│   │   ├── IJiraTicketService.cs
-│   │   ├── IJiraSearchService.cs
-│   │   ├── IJiraProjectService.cs
-│   │   └── IConfluenceService.cs      # Confluence service interface
-│   └── Implementations/
-│       ├── JiraAuthService.cs
-│       ├── JiraTicketService.cs
-│       ├── JiraSearchService.cs
-│       ├── JiraProjectService.cs
-│       └── ConfluenceService.cs       # Confluence API operations
-├── Program.cs                         # Entry point and DI setup
-├── appsettings.json                   # Application configuration
-└── .env                              # Environment variables (credentials)
-```
-
-## 📋 Prerequisites
-
-- **.NET 9.0** or later
-- **JIRA Cloud** instance with API access
-- **JIRA API Token** (generated from Atlassian Account Settings)
-
-## ⚙️ Setup Instructions
-
-### 1. Clone and Build
+Start the API (it listens on <http://localhost:5000>):
 
 ```bash
-git clone <repository-url>
-cd JiraIntegration
-dotnet restore
-dotnet build
+dotnet run --project src/JiraIntegration
 ```
 
-### 2. Configure Environment Variables
-
-Create a `.env` file in the project root:
-
-```env
-# JIRA & Confluence Configuration (same token works for both)
-JIRA_BASE_URL=https://your-domain.atlassian.net
-JIRA_USER_EMAIL=your-email@domain.com
-JIRA_API_TOKEN=your-api-token-here
-JIRA_PROJECT_KEY=YOUR_PROJECT_KEY
-```
-
-> **Note**: The same API token works for both JIRA and Confluence since they're part of the same Atlassian Cloud instance.
-
-### 3. Generate JIRA API Token
-
-1. Go to [Atlassian Account Settings](https://id.atlassian.com/manage-profile/security/api-tokens)
-2. Click "Create API token"
-3. Give it a descriptive name (e.g., "JIRA & Confluence Integration")
-4. Copy the token to your `.env` file
-
-> **Important**: This token provides access to both JIRA and Confluence APIs automatically.
-
-### 4. Run the Application
+Start the front end in a second terminal and open <http://localhost:5173>:
 
 ```bash
-dotnet run
+cd frontend
+npm install
+npm run dev
 ```
 
-## 🎯 Usage Examples
+The Vite dev server passes `/api` on to the API, so the browser talks to one origin. Set `API_URL` before `npm run dev` if the API runs elsewhere.
 
-### **Test Connection**
+When the API runs in Development (the default with `dotnet run`), its OpenAPI document is at <http://localhost:5000/openapi/v1.json> and an API reference to try the routes at <http://localhost:5000/scalar>.
 
-```
-🔐 Test Connection & Show User Info
-✅ Connection Status: ACTIVE
-👤 User: John Doe
-📧 Email: john.doe@company.com
-🟢 Status: Active
-```
+## API
 
-### **Create Ticket**
+| Method | Route | Does |
+|---|---|---|
+| GET | `/api/connection` | Tries the credentials on Jira and on Confluence |
+| GET | `/api/connection/settings` | The settings in use, without the token |
+| GET | `/api/tickets?jql=&nextPageToken=&maxResults=` | One page of tickets; without `jql`, the configured project's, newest first |
+| POST | `/api/tickets` | Creates a ticket: `summary`, `description`, `issueType` (name), `priority` (name), `assigneeAccountId`, `projectKey` |
+| GET | `/api/tickets/{key}` | One ticket, description as text |
+| PUT | `/api/tickets/{key}` | Changes only the fields given; an empty `assigneeAccountId` unassigns |
+| DELETE | `/api/tickets/{key}` | Deletes the ticket |
+| GET | `/api/tickets/{key}/transitions` | The moves the workflow allows from the current status |
+| POST | `/api/tickets/{key}/transitions` | Makes a move: `transitionId`, optional `comment` |
+| GET | `/api/tickets/{key}/comments` | The comments, oldest first |
+| POST | `/api/tickets/{key}/comments` | Adds a comment: `body` |
+| DELETE | `/api/tickets/{key}/comments/{commentId}` | Deletes a comment |
+| GET | `/api/projects/{projectKey}/issue-types` | The project's issue types, without sub-tasks |
+| GET | `/api/projects/{projectKey}/assignable-users` | Who a ticket in the project can be assigned to |
+| GET | `/api/priorities` | The site's priorities |
+| GET | `/api/users?query=` | Users whose name or email starts with the query |
+| GET | `/api/confluence/spaces` | The spaces the account can see |
+| GET | `/api/confluence/spaces/{spaceKey}/pages` | The space's pages, by title |
+| GET | `/api/confluence/pages/{pageId}` | One page with its body in storage format |
+| POST | `/api/confluence/pages` | Creates a page: `spaceKey`, `title`, `text`, optional `parentId` |
+| GET | `/api/confluence/search?text=&spaceKey=` | Pages whose text matches |
 
-```
-🎫 Create New Ticket
-Project Key: OPS
-Summary: Fix login issue
-Description: Users unable to login after password reset
-Issue Type: Bug
-Priority: High
-✅ Ticket created: OPS-123
-```
+Errors come back as problem details. A 400 or 404 from Atlassian is passed on with Atlassian's message; refused credentials and other Atlassian errors are a 502; a site that can't be reached is a 504; missing settings are a 503 naming them.
 
-### **JQL Search Examples**
-
-```
-🔍 Search Tickets (JQL)
-Examples:
-• project = OPS
-• project = OPS AND status = "In Progress"
-• assignee = currentUser()
-• created >= -7d
-• priority = High
-```
-
-### **Transition Ticket**
-
-```
-🔄 Transition Ticket
-Ticket: OPS-123
-Available Transitions:
-1. Start Progress → In Progress
-2. Resolve Issue → Done
-Select transition: 1
-✅ Ticket OPS-123 moved to "In Progress"
-```
-
-### **Confluence Integration**
-
-```
-📚 List Available Spaces
-Found 3 space(s):
-
-1. Development Documentation
-   🔑 Key: DEV
-   📝 Type: global
-   🟢 Status: current
-
-2. Project Alpha
-   🔑 Key: PROJ
-   📝 Type: global
-   🟢 Status: current
-```
-
-```
-🔍 Search Confluence Pages
-Enter search query: API documentation
-Found 2 page(s) matching 'API documentation':
-
-1. REST API Guidelines
-   📚 Space: Development Documentation (DEV)
-   📄 Excerpt: Complete guide for REST API development...
-   🔗 URL: https://yourcompany.atlassian.net/wiki/...
-
-2. API Security Standards
-   📚 Space: Project Alpha (PROJ)
-   📄 Excerpt: Security requirements for all APIs...
-```
-
-```
-📝 Create New Confluence Page
-Available spaces:
-1. Development Documentation (DEV)
-2. Project Alpha (PROJ)
-Select space (1-2): 1
-Enter page title: Release Notes v2.1
-Enter page content: <p>Release notes for version 2.1...</p>
-✅ Page created successfully!
-📄 Title: Release Notes v2.1
-🆔 ID: 98765
-🔗 View in browser: https://yourcompany.atlassian.net/wiki/...
-```
-
-## 🔧 Configuration Options
-
-### **Environment Variables**
-
-- `JIRA_BASE_URL`: Your JIRA instance URL
-- `JIRA_USER_EMAIL`: Your JIRA account email
-- `JIRA_API_TOKEN`: Your JIRA API token
-- `JIRA_PROJECT_KEY`: Default project key to use
-
-## 🔒 Security Features
-
-- **Environment-based Configuration**: Sensitive data stored in environment variables
-- **API Token Authentication**: Uses secure token-based authentication
-- **Input Validation**: All user inputs are validated before API calls
-- **Error Handling**: Sensitive information is not exposed in error messages
-- **Logging Control**: Different log levels for development and production
-
-## 📊 API Endpoints Used
-
-| Feature           | JIRA REST API Endpoint                | Purpose                   |
-| ----------------- | ------------------------------------- | ------------------------- |
-| Authentication    | `/rest/api/3/myself`                  | Validate credentials      |
-| Create Ticket     | `/rest/api/3/issue`                   | Create new issues         |
-| Get Ticket        | `/rest/api/3/issue/{key}`             | Retrieve ticket details   |
-| Search Tickets    | `/rest/api/3/search`                  | JQL-based search          |
-| Get Transitions   | `/rest/api/3/issue/{key}/transitions` | Get available transitions |
-| Transition Ticket | `/rest/api/3/issue/{key}/transitions` | Execute transitions       |
-| Get Project       | `/rest/api/3/project/{key}`           | Project information       |
-| Get Issue Types   | `/rest/api/3/issuetype`               | Available issue types     |
-
-## 🚨 Error Handling
-
-The application includes comprehensive error handling for:
-
-- **Network Issues**: Connection timeouts, DNS resolution failures
-- **Authentication Errors**: Invalid credentials, expired tokens
-- **API Errors**: Invalid requests, permission denied, rate limiting
-- **Data Validation**: Invalid input formats, missing required fields
-- **Configuration Issues**: Missing environment variables, invalid URLs
-
-## 🎛️ Logging
-
-Structured logging is implemented using Microsoft.Extensions.Logging:
-
-- **Information**: Normal operation flow
-- **Warning**: Recoverable issues (API warnings, validation failures)
-- **Error**: Exception details for troubleshooting
-- **Debug**: Detailed HTTP request/response information
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/new-feature`)
-3. Commit your changes (`git commit -am 'Add new feature'`)
-4. Push to the branch (`git push origin feature/new-feature`)
-5. Create a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🆘 Troubleshooting
-
-### **Common Issues**
-
-**Connection Failed**
-
-- Verify JIRA_BASE_URL is correct (include https://)
-- Check JIRA_USER_EMAIL matches your Atlassian account
-- Ensure JIRA_API_TOKEN is valid and not expired
-
-**Permission Denied**
-
-- Verify your JIRA account has necessary permissions
-- Check if your API token has the required scopes
-- For Confluence: Ensure you have at least read access to spaces you want to browse
-
-**Confluence Connection Issues**
-
-- If Confluence connection fails but JIRA works, verify your domain has Confluence enabled
-- The same API token works for both JIRA and Confluence automatically
-- Check that your Atlassian account has Confluence access permissions
-
-**Confluence Space Access**
-
-- If no spaces are listed, check your Confluence permissions
-- You need at least "View" permission to see spaces
-- Contact your Atlassian administrator if you need access to specific spaces
-
-**Confluence Page Creation Issues**
-
-- Ensure you have "Add Page" permission in the target space
-- Verify the space key is correct and exists
-- Check that parent page ID (if specified) exists and you have access
-
-**Invalid Issue Type**
-
-- Issue type IDs vary by JIRA instance
-- Use the application to browse available issue types first
-
-**JQL Syntax Errors**
-
-- Refer to [JIRA JQL documentation](https://support.atlassian.com/jira-service-management-cloud/docs/use-advanced-search-with-jira-query-language-jql/)
-- Start with simple queries like `project = YOUR_KEY`
-
-**JSON Deserialization Errors**
-
-- The application handles both legacy string descriptions and modern ADF (Atlassian Document Format) descriptions
-- If you encounter description parsing errors, this is likely due to complex ADF content
-- The custom converter automatically extracts text content from ADF objects
-
-**Ticket Creation Issues**
-
-- Ensure you're using the correct issue type ID (numbers like 10001, 10002)
-- Issue type IDs vary by JIRA instance configuration
-- Use the application to browse available issue types for your project
-
-**Ticket Transition Issues**
-
-- If transitions appear to fail but the HTTP status is 204, this indicates success
-- JIRA returns HTTP 204 (No Content) for successful transitions, which is the correct behavior
-- The application correctly handles JIRA's 204 No Content responses for transitions
-- If you see "Failed to transition ticket" but HTTP logs show 204 status, check the ticket status in JIRA web interface to confirm the transition actually succeeded
-- Enable debug logging (see Debug Mode below) to see detailed HTTP request/response information
-
-### **Debug Mode**
-
-Run with detailed logging:
+## Tests
 
 ```bash
-dotnet run --configuration Debug
+dotnet test
+cd frontend && npm test
 ```
 
-This will show HTTP request/response details for troubleshooting API issues.
+The API tests run the whole app with `WebApplicationFactory`, with every call to Atlassian going to a fake site (`tests/JiraIntegration.Tests/FakeAtlassian.cs`) that records the requests. They check what is sent to Jira and Confluence as well as what comes back, so no Atlassian account is needed. The front end tests stub `fetch`. GitHub Actions runs both on every pull request.
+
+## Project layout
+
+```
+src/JiraIntegration/         the API
+  Atlassian/                 HTTP base class, errors, ADF and query text helpers
+  Configuration/             settings from .env and the HttpClient registrations
+  Controllers/               the routes above
+  Models/                    Jira and Confluence answers, the API's requests and views
+  Services/                  one service per area, behind an interface
+tests/JiraIntegration.Tests/ xUnit tests of the API
+frontend/                    React, Vite and Tailwind CSS
+```
+
+## Limits
+
+- Jira Cloud and Confluence Cloud only. Jira Data Center has REST API v2, plain-text descriptions and other authentication.
+- Descriptions and comments are handled as plain text. Rich formatting in Atlassian Document Format (tables, panels, colours) is flattened when read, and text is saved as paragraphs.
+- The API has no sign-in of its own and acts as the token's account. It listens on localhost only and accepts only localhost host names; don't expose it to a network.
+- Issue types and priorities are given by name, so they must exist in the project.
+
+## History
+
+The project started as a console application and became a web API with a React front end in October 2025. The tag `v1` holds that version, before the move to .NET 10, the current Jira search API and Confluence REST API v2.
+
+## License
+
+MIT, see [LICENSE](LICENSE).
